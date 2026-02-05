@@ -146,7 +146,7 @@ export default function Home() {
   return (
     <main className="min-h-screen">
       <header className="sticky top-0 z-50 border-b border-black/10 bg-linear-to-r from-rose-500 via-orange-500 to-amber-400 text-white shadow-lg shadow-orange-500/30">
-        <div className="mx-auto max-w-6xl px-6 py-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto max-w-6xl px-6 py-2 flex gap-4 md:flex-row md:items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-3xl bg-black/65 ring-1 ring-white/30 backdrop-blur" />
             <div className="leading-tight">
