@@ -150,7 +150,7 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-3xl bg-black/65 ring-1 ring-white/30 backdrop-blur" />
             <div className="leading-tight">
-              <h1 className="text-2xl font-black tracking-tight">MaZone</h1>
+              <h1 className="text-2xl font-black text-white tracking-tight">Ma<span className="text-gray-900">Zone</span></h1>
               <p className="text-xs text-white/80">Evenements pres de vous</p>
             </div>
           </div>
