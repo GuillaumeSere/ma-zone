@@ -113,10 +113,6 @@ export default function Map({
 
         <MapFocus selectedEvent={selectedEvent} markerRefs={markerRefs} />
 
-        <Marker position={position}>
-          <Popup>Vous etes ici</Popup>
-        </Marker>
-
         {events
           .filter((event) => event.latitude && event.longitude)
           .map((event) => (

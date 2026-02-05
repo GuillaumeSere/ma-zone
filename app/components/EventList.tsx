@@ -9,6 +9,8 @@ interface Props {
   selectedEventId?: string | null;
   loading?: boolean;
   error?: string | null;
+  favoriteIds?: Set<string>;
+  onToggleFavorite?: (event: Event) => void;
 }
 
 export default function EventList({
@@ -17,6 +19,8 @@ export default function EventList({
   selectedEventId,
   loading,
   error,
+  favoriteIds,
+  onToggleFavorite,
 }: Props) {
   if (loading) return <p>Chargement des evenements...</p>;
   if (error) return <p>Erreur: {error}</p>;
@@ -30,6 +34,8 @@ export default function EventList({
           event={event}
           onSelect={onSelectEvent}
           isActive={selectedEventId === event.id}
+          isFavorite={favoriteIds?.has(event.id)}
+          onToggleFavorite={onToggleFavorite}
         />
       ))}
     </div>

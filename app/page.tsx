@@ -37,6 +37,8 @@ export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [eventbriteOrgId, setEventbriteOrgId] = useState<string | null>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const [countryCode, setCountryCode] = useState("FR");
   const [showFilters, setShowFilters] = useState(false);
   const [query, setQuery] = useState("");
@@ -44,6 +46,47 @@ export default function Home() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [freeOnly, setFreeOnly] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+
+  const FAVORITES_KEY = "ma-zone:favorites";
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(FAVORITES_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setFavoriteIds(new Set(parsed.filter((v) => typeof v === "string")));
+        }
+      }
+    } catch {
+      setFavoriteIds(new Set());
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== FAVORITES_KEY) return;
+      try {
+        const parsed = e.newValue ? JSON.parse(e.newValue) : [];
+        if (Array.isArray(parsed)) {
+          setFavoriteIds(new Set(parsed.filter((v) => typeof v === "string")));
+        }
+      } catch {
+        setFavoriteIds(new Set());
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  const persistFavorites = (next: Set<string>) => {
+    if (typeof window === "undefined") return;
+    const arr = Array.from(next);
+    window.localStorage.setItem(FAVORITES_KEY, JSON.stringify(arr));
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -56,6 +99,14 @@ export default function Home() {
         const data = await res.json();
         if (!res.ok) {
           throw new Error(data?.error || "API error");
+        }
+
+        if (Array.isArray(data?.events)) {
+          if (!cancelled) {
+            setEvents(data.events as Event[]);
+            setEventbriteOrgId(data?.eventbriteOrgId || null);
+          }
+          return;
         }
 
         const items = data?._embedded?.events || [];
@@ -77,7 +128,9 @@ export default function Home() {
           category: item.classifications?.[0]?.segment?.name || "",
         }));
 
-        if (!cancelled) setEvents(mapped);
+        if (!cancelled) {
+          setEvents(mapped);
+        }
       } catch (err: any) {
         if (!cancelled) setError(err?.message || "Erreur inconnue");
       } finally {
@@ -90,6 +143,18 @@ export default function Home() {
       cancelled = true;
     };
   }, [countryCode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const onScroll = () => {
+      setShowScrollTop(window.scrollY > 120);
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const categories = useMemo(() => {
     const values = Array.from(
@@ -126,6 +191,24 @@ export default function Home() {
     });
   }, [events, query, category, freeOnly, dateFrom, dateTo]);
 
+  const favoriteEvents = useMemo(() => {
+    if (!favoriteIds.size) return [];
+    return events.filter((e) => favoriteIds.has(e.id));
+  }, [events, favoriteIds]);
+
+  const handleToggleFavorite = (event: Event) => {
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(event.id)) {
+        next.delete(event.id);
+      } else {
+        next.add(event.id);
+      }
+      persistFavorites(next);
+      return next;
+    });
+  };
+
   const handleSelectEvent = (event: Event) => {
     setSelectedEvent({
       id: event.id,
@@ -148,7 +231,7 @@ export default function Home() {
       <header className="sticky top-0 z-50 border-b border-black/10 bg-linear-to-r from-rose-500 via-orange-500 to-amber-400 text-white shadow-lg shadow-orange-500/30">
         <div className="mx-auto max-w-6xl px-6 py-2 flex gap-4 md:flex-row md:items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-3xl bg-black/65 ring-1 ring-white/30 backdrop-blur" />
+            <div className="h-10 w-10 rounded-3xl bg-black/85 ring-1 ring-white/30 backdrop-blur" />
             <div className="leading-tight">
               <h1 className="text-2xl font-black text-white tracking-tight">Ma<span className="text-gray-900">Zone</span></h1>
               <p className="text-xs text-white/80">Evenements pres de vous</p>
@@ -159,6 +242,11 @@ export default function Home() {
             <span className="hidden sm:inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/30">
               Decouverte locale
             </span>
+            {eventbriteOrgId ? (
+              <span className="hidden sm:inline-flex rounded-full bg-black/35 px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/30">
+                Eventbrite org: {eventbriteOrgId}
+              </span>
+            ) : null}
             <button
               type="button"
               onClick={() => setShowFilters((v) => !v)}
@@ -271,14 +359,147 @@ export default function Home() {
         <MapClient selectedEvent={selectedEvent} events={filteredEvents} />
       </div>
 
-        <EventList
-          onSelectEvent={handleSelectEvent}
-          selectedEventId={selectedEvent?.id ?? null}
-          events={filteredEvents}
-          loading={loading}
-          error={error}
-        />
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_clamp(220px,24vw,280px)]">
+          <section className="lg:hidden rounded-2xl bg-white/90 p-4 shadow-lg shadow-black/10 ring-1 ring-black/5 backdrop-blur">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black uppercase tracking-wide text-gray-900">
+                Favoris
+              </h3>
+              <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs font-semibold text-gray-800">
+                {favoriteEvents.length}
+              </span>
+            </div>
+
+            {favoriteEvents.length === 0 ? (
+              <p className="mt-4 text-xs text-gray-500">
+                Ajoute une etoile pour retrouver tes evenements ici.
+              </p>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {favoriteEvents.map((event) => (
+                  <button
+                    key={event.id}
+                    type="button"
+                    onClick={() => handleSelectEvent(event)}
+                    className="w-full min-w-0 overflow-hidden rounded-xl border border-black/5 bg-linear-to-br from-white via-rose-50 to-amber-50 p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="h-12 w-12 flex-none overflow-hidden rounded-lg bg-black/5">
+                        {event.image ? (
+                          <img
+                            src={event.image}
+                            alt={event.title}
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : null}
+                      </div>
+                      <div className="min-w-0">
+                        <p
+                          className="text-sm font-semibold text-gray-900"
+                          style={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {event.title}
+                        </p>
+                        <p className="mt-1 truncate text-xs text-gray-500">
+                          {event.date} a {event.time}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <div>
+            <EventList
+              onSelectEvent={handleSelectEvent}
+              selectedEventId={selectedEvent?.id ?? null}
+              events={filteredEvents}
+              loading={loading}
+              error={error}
+              favoriteIds={favoriteIds}
+              onToggleFavorite={handleToggleFavorite}
+            />
+          </div>
+
+          <aside className="hidden lg:block w-full min-w-0">
+            <div className="sticky top-24 rounded-2xl bg-white/90 p-4 shadow-lg shadow-black/10 ring-1 ring-black/5 backdrop-blur">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-black uppercase tracking-wide text-gray-900">
+                  Favoris
+                </h3>
+                <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs font-semibold text-gray-800">
+                  {favoriteEvents.length}
+                </span>
+              </div>
+
+              {favoriteEvents.length === 0 ? (
+                <p className="mt-4 text-xs text-gray-500">
+                  Ajoute une etoile pour retrouver tes evenements ici.
+                </p>
+              ) : (
+                <div className="mt-4 space-y-3">
+                  {favoriteEvents.map((event) => (
+                    <button
+                      key={event.id}
+                      type="button"
+                      onClick={() => handleSelectEvent(event)}
+                      className="w-full min-w-0 overflow-hidden rounded-xl border border-black/5 bg-linear-to-br from-white via-rose-50 to-amber-50 p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="h-12 w-12 flex-none overflow-hidden rounded-lg bg-black/5">
+                          {event.image ? (
+                            <img
+                              src={event.image}
+                              alt={event.title}
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : null}
+                        </div>
+                        <div className="min-w-0">
+                          <p
+                            className="text-sm font-semibold text-gray-900"
+                            style={{
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {event.title}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {event.date} a {event.time}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
       </div>
+
+      {showScrollTop ? (
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="fixed bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-black/80 text-white shadow-lg shadow-black/20 transition hover:-translate-y-0.5"
+          aria-label="Remonter en haut"
+        >
+          <span className="text-lg leading-none">↑</span>
+        </button>
+      ) : null}
     </main>
   );
 }
