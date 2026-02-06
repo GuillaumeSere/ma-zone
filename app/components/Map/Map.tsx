@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
+import Link from "next/link";
 import { Event } from "../../types/event";
 import "leaflet/dist/leaflet.css";
 
@@ -115,37 +116,70 @@ export default function Map({
 
         {events
           .filter((event) => event.latitude && event.longitude)
-          .map((event) => (
-            <Marker
-              key={event.id}
-              position={[event.latitude, event.longitude]}
-              icon={selectedEvent?.id === event.id ? activeIcon : defaultIcon}
-              ref={(ref) => {
-                if (ref) markerRefs.current[event.id] = ref;
-              }}
-            >
-              <Popup>
-                <div className="space-y-1">
-                  {event.image ? (
-                    <img
-                      src={event.image}
-                      alt={event.title}
-                      className="h-28 w-full rounded-lg object-cover"
-                      loading="lazy"
-                    />
-                  ) : null}
-                  <h3 className="font-bold">{event.title}</h3>
-                  <p className="text-sm">
-                    {event.date} a {event.time}
-                  </p>
-                  <p className="text-xs text-gray-500">{event.locationName}</p>
-                  <p className="text-xs text-gray-500">
-                    {[event.address, event.city].filter(Boolean).join(", ")}
-                  </p>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+          .map((event) => {
+            const resolvedSource =
+              event.source ||
+              (event.id?.startsWith("tm_")
+                ? "ticketmaster"
+                : event.id?.startsWith("eb_")
+                ? "eventbrite"
+                : "ticketmaster");
+            const resolvedSourceId =
+              event.sourceId || event.id?.replace(/^tm_|^eb_/, "");
+            const detailCacheKey = `ma-zone:event:${resolvedSource}:${resolvedSourceId}`;
+
+            return (
+              <Marker
+                key={event.id}
+                position={[event.latitude, event.longitude]}
+                icon={selectedEvent?.id === event.id ? activeIcon : defaultIcon}
+                ref={(ref) => {
+                  if (ref) markerRefs.current[event.id] = ref;
+                }}
+              >
+                <Popup>
+                  <div className="space-y-2">
+                    {event.image ? (
+                      <img
+                        src={event.image}
+                        alt={event.title}
+                        className="h-28 w-full rounded-lg object-cover"
+                        loading="lazy"
+                      />
+                    ) : null}
+                    <h3 className="font-bold">{event.title}</h3>
+                    <p className="text-sm">
+                      {event.date} a {event.time}
+                    </p>
+                    <p className="text-xs text-gray-500">{event.locationName}</p>
+                    <p className="text-xs text-gray-500">
+                      {[event.address, event.city].filter(Boolean).join(", ")}
+                    </p>
+                    <div className="pt-1">
+                      <Link
+                        href={`/event/${resolvedSource}/${resolvedSourceId}`}
+                        onClick={() => {
+                          try {
+                            if (typeof window !== "undefined") {
+                              window.sessionStorage.setItem(
+                                detailCacheKey,
+                                JSON.stringify(event)
+                              );
+                            }
+                          } catch {
+                            // ignore storage failures
+                          }
+                        }}
+                        className="inline-flex items-center gap-2 rounded-full bg-black/90 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5"
+                      >
+                        Voir plus
+                      </Link>
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
       </MapContainer>
     </div>
   );

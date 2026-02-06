@@ -7,13 +7,11 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
   const countryCode = searchParams.get("countryCode") || "FR";
-  const latlong = searchParams.get("latlong") || "48.8566,2.3522";
-  const radius = searchParams.get("radius") || "200";
+  const latlong = searchParams.get("latlong");
+  const radius = searchParams.get("radius");
   const size = searchParams.get("size") || "200";
   const locale = searchParams.get("locale") || "fr-fr";
   const eventbritePages = Number(searchParams.get("eventbritePages") || "10");
-
-    const [lat, lng] = latlong.split(",").map((v) => Number(v.trim()));
 
   const mapTicketmaster = (item: any): Event => ({
     id: `tm_${item.id}`,
@@ -67,13 +65,13 @@ export async function GET(request: Request) {
                 `https://app.ticketmaster.com/discovery/v2/events.json?${new URLSearchParams(
                     {
                         apikey: apiKey,
-                        latlong,
-                        radius,
                         size,
                         locale,
                         ...(countryCode && countryCode !== "ALL"
                             ? { countryCode }
                             : {}),
+                        ...(latlong ? { latlong } : {}),
+                        ...(latlong && radius ? { radius } : {}),
                     }
                 ).toString()}`,
                 { cache: "no-store" }
