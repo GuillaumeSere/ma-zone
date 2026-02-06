@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { Event } from "../types/event";
+import { formatFrenchDateTime } from "../lib/date";
 
 interface Props {
   event: Event;
@@ -16,6 +18,15 @@ export default function EventCard({
   onToggleFavorite,
 }: Props) {
   const hasImage = Boolean(event.image);
+  const resolvedSource =
+    event.source ||
+    (event.id?.startsWith("tm_")
+      ? "ticketmaster"
+      : event.id?.startsWith("eb_")
+      ? "eventbrite"
+      : "ticketmaster");
+  const resolvedSourceId = event.sourceId || event.id?.replace(/^tm_|^eb_/, "");
+  const detailCacheKey = `ma-zone:event:${resolvedSource}:${resolvedSourceId}`;
 
   return (
     <div
@@ -71,7 +82,7 @@ export default function EventCard({
         </h3>
 
         <p className="text-sm text-gray-600">
-          {event.date} a {event.time}
+          {formatFrenchDateTime(event.date, event.time)}
         </p>
 
         <p className="text-sm text-gray-500">{event.locationName}</p>
@@ -80,8 +91,34 @@ export default function EventCard({
         </p>
 
         <p className="text-sm text-gray-600 font-semibold mt-auto">
-          {event.price ? `${event.price} EUR` : "Gratuit"}
+          {event.price == null
+            ? "Renseignement au pres de la billetterie"
+            : event.price === 0
+            ? "Gratuit"
+            : `${event.price} EUR`}
         </p>
+
+        <div className="pt-1">
+          <Link
+            href={`/event/${resolvedSource}/${resolvedSourceId}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              try {
+                if (typeof window !== "undefined") {
+                  window.sessionStorage.setItem(
+                    detailCacheKey,
+                    JSON.stringify(event)
+                  );
+                }
+              } catch {
+                // ignore storage failures
+              }
+            }}
+            className="inline-flex items-center gap-2 rounded-full bg-black/90 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5"
+          >
+            Voir plus
+          </Link>
+        </div>
       </div>
     </div>
   );

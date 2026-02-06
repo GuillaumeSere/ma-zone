@@ -15,36 +15,42 @@ export async function GET(request: Request) {
 
     const [lat, lng] = latlong.split(",").map((v) => Number(v.trim()));
 
-    const mapTicketmaster = (item: any): Event => ({
-        id: item.id,
-        title: item.name,
-        description: item.info || "",
-        image:
-            item?.images
+  const mapTicketmaster = (item: any): Event => ({
+    id: `tm_${item.id}`,
+    source: "ticketmaster",
+    sourceId: item.id,
+    title: item.name,
+    description: item.info || "",
+    image:
+      item?.images
                 ?.filter((img: any) => img?.url)
                 ?.sort((a: any, b: any) => (b?.width || 0) - (a?.width || 0))?.[0]
                 ?.url || "",
-        date: item.dates?.start?.localDate || "",
-        time: item.dates?.start?.localTime || "",
-        locationName: item._embedded?.venues?.[0]?.name || "",
-        address: item._embedded?.venues?.[0]?.address?.line1 || "",
-        city: item._embedded?.venues?.[0]?.city?.name || "",
-        latitude: parseFloat(item._embedded?.venues?.[0]?.location?.latitude) || 0,
+    date: item.dates?.start?.localDate || "",
+    time: item.dates?.start?.localTime || "",
+    url: item?.url || "",
+    locationName: item._embedded?.venues?.[0]?.name || "",
+    address: item._embedded?.venues?.[0]?.address?.line1 || "",
+    city: item._embedded?.venues?.[0]?.city?.name || "",
+    latitude: parseFloat(item._embedded?.venues?.[0]?.location?.latitude) || 0,
         longitude: parseFloat(item._embedded?.venues?.[0]?.location?.longitude) || 0,
         price: null,
         category: item.classifications?.[0]?.segment?.name || "",
     });
 
-    const mapEventbrite = (item: any): Event => ({
-        id: `eb_${item.id}`,
-        title: item?.name?.text || "",
-        description: item?.description?.text || "",
-        image: item?.logo?.url || "",
-        date: (item?.start?.local || "").split("T")[0] || "",
-        time: (item?.start?.local || "").split("T")[1]?.slice(0, 5) || "",
-        locationName: item?.venue?.name || "",
-        address: item?.venue?.address?.address_1 || "",
-        city: item?.venue?.address?.city || "",
+  const mapEventbrite = (item: any): Event => ({
+    id: `eb_${item.id}`,
+    source: "eventbrite",
+    sourceId: item.id,
+    title: item?.name?.text || "",
+    description: item?.description?.text || "",
+    image: item?.logo?.url || "",
+    date: (item?.start?.local || "").split("T")[0] || "",
+    time: (item?.start?.local || "").split("T")[1]?.slice(0, 5) || "",
+    url: item?.url || "",
+    locationName: item?.venue?.name || "",
+    address: item?.venue?.address?.address_1 || "",
+    city: item?.venue?.address?.city || "",
         latitude: Number(item?.venue?.latitude) || 0,
         longitude: Number(item?.venue?.longitude) || 0,
         price: item?.is_free

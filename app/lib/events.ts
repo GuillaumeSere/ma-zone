@@ -2,10 +2,13 @@ import { Event } from "../types/event";
 
 export const mockEvents: Event[] = [
   {
-    id: "1",
+    id: "tm_1",
+    source: "ticketmaster",
+    sourceId: "1",
     title: "Concert Pop Live",
     description: "Un super concert en plein air",
     image: "https://picsum.photos/600/400",
+    url: "https://example.com",
     date: "2026-03-12",
     time: "20:00",
     locationName: "Parc Central",
@@ -17,10 +20,13 @@ export const mockEvents: Event[] = [
     category: "Music",
   },
   {
-    id: "2",
+    id: "eb_2",
+    source: "eventbrite",
+    sourceId: "2",
     title: "Festival Food Truck",
     description: "Cuisine du monde entier",
     image: "https://picsum.photos/600/400",
+    url: "https://example.com",
     date: "2026-03-15",
     time: "12:00",
     locationName: "Place de la République",

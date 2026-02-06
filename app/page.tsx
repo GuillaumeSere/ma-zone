@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import MapClient from "./components/Map/MapClient";
 import EventList from "./components/EventList";
 import { Event } from "./types/event";
+import { formatFrenchDateTime } from "./lib/date";
 
 const COUNTRY_OPTIONS = [
   { code: "FR", label: "France" },
@@ -111,12 +112,15 @@ export default function Home() {
 
         const items = data?._embedded?.events || [];
         const mapped: Event[] = items.map((item: any) => ({
-          id: item.id,
+          id: `tm_${item.id}`,
+          source: "ticketmaster",
+          sourceId: item.id,
           title: item.name,
           description: item.info || "",
           image: pickBestImage(item),
           date: item.dates?.start?.localDate || "",
           time: item.dates?.start?.localTime || "",
+          url: item?.url || "",
           locationName: item._embedded?.venues?.[0]?.name || "",
           address: item._embedded?.venues?.[0]?.address?.line1 || "",
           city: item._embedded?.venues?.[0]?.city?.name || "",
@@ -143,6 +147,20 @@ export default function Home() {
       cancelled = true;
     };
   }, [countryCode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!events.length) return;
+
+    try {
+      for (const event of events) {
+        const cacheKey = `ma-zone:event:${event.source}:${event.sourceId}`;
+        window.localStorage.setItem(cacheKey, JSON.stringify(event));
+      }
+    } catch {
+      // ignore storage failures
+    }
+  }, [events]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -228,39 +246,26 @@ export default function Home() {
 
   return (
     <main className="min-h-screen">
-      <header className="sticky top-0 z-50 border-b border-black/10 bg-linear-to-r from-rose-500 via-orange-500 to-amber-400 text-white shadow-lg shadow-orange-500/30">
-        <div className="mx-auto max-w-6xl px-6 py-2 flex gap-4 md:flex-row md:items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-3xl bg-black/85 ring-1 ring-white/30 backdrop-blur" />
-            <div className="leading-tight">
-              <h1 className="text-2xl font-black text-white tracking-tight">Ma<span className="text-gray-900">Zone</span></h1>
-              <p className="text-xs text-white/80">Evenements pres de vous</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="hidden sm:inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/30">
-              Decouverte locale
-            </span>
-            {eventbriteOrgId ? (
-              <span className="hidden sm:inline-flex rounded-full bg-black/35 px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/30">
-                Eventbrite org: {eventbriteOrgId}
-              </span>
-            ) : null}
+      <div className="mx-auto max-w-6xl p-6 space-y-10">
+        <div className="rounded-2xl bg-white/95 p-4 text-gray-900 ring-1 ring-black/10 shadow-sm">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={() => setShowFilters((v) => !v)}
-              className="h-10 rounded-xl bg-white px-4 text-sm font-semibold text-gray-900 shadow-md shadow-black/20 transition hover:-translate-y-0.5"
+              className="h-10 rounded-xl bg-black/90 px-4 text-sm font-semibold text-white shadow-md shadow-black/20 transition hover:-translate-y-0.5"
             >
               Filtres
             </button>
+            {eventbriteOrgId ? (
+              <span className="rounded-full bg-black/10 px-3 py-1 text-xs font-semibold text-gray-700">
+                Eventbrite org: {eventbriteOrgId}
+              </span>
+            ) : null}
           </div>
-        </div>
 
-        <div className="mx-auto max-w-6xl px-6 pb-4">
           <div
             className={[
-              "grid gap-3 rounded-2xl bg-white/95 p-4 text-gray-900 ring-1 ring-black/10 shadow-sm",
+              "mt-4 grid gap-3",
               showFilters ? "grid-cols-1 md:grid-cols-3 lg:grid-cols-5" : "hidden",
             ].join(" ")}
           >
@@ -309,9 +314,7 @@ export default function Home() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-600">
-                Du
-              </label>
+              <label className="text-xs font-semibold text-gray-600">Du</label>
               <input
                 type="date"
                 value={dateFrom}
@@ -321,9 +324,7 @@ export default function Home() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-600">
-                Au
-              </label>
+              <label className="text-xs font-semibold text-gray-600">Au</label>
               <input
                 type="date"
                 value={dateTo}
@@ -343,9 +344,6 @@ export default function Home() {
             </label>
           </div>
         </div>
-      </header>
-
-      <div className="mx-auto max-w-6xl p-6 space-y-10">
         <div className="rounded-3xl bg-linear-to-br from-orange-50 via-rose-50 to-amber-50 p-6 ring-1 ring-black/5">
           <h2 className="text-3xl font-black text-gray-900">
             Evenements autour de moi
@@ -407,7 +405,7 @@ export default function Home() {
                           {event.title}
                         </p>
                         <p className="mt-1 truncate text-xs text-gray-500">
-                          {event.date} a {event.time}
+                          {formatFrenchDateTime(event.date, event.time)}
                         </p>
                       </div>
                     </div>
@@ -477,7 +475,7 @@ export default function Home() {
                             {event.title}
                           </p>
                           <p className="mt-1 text-xs text-gray-500">
-                            {event.date} a {event.time}
+                            {formatFrenchDateTime(event.date, event.time)}
                           </p>
                         </div>
                       </div>
