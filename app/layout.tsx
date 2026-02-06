@@ -38,8 +38,8 @@ export const metadata: Metadata = {
     "sorties culturelles",
   ],
 
-  authors: [{ name: "Ma Zone" }],
-  creator: "Ma Zone",
+  authors: [{ name: "Guillaume SERENT", url: "https://guillaume-sere.vercel.app/" }],
+  creator: "Guillaume SERE",
   publisher: "Ma Zone",
 
   robots: {
