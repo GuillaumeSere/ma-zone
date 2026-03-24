@@ -50,6 +50,7 @@ export default function Home() {
     const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
     const [latlong, setLatlong] = useState<string | null>(null);
     const [geoError, setGeoError] = useState<string | null>(null);
+    const [geoFallbackMessage, setGeoFallbackMessage] = useState<string | null>(null);
 
     const FAVORITES_KEY = "ma-zone:favorites";
 
@@ -94,53 +95,80 @@ export default function Home() {
     useEffect(() => {
         let cancelled = false;
 
+        const fetchEvents = async (useGeolocation: boolean) => {
+            const params = new URLSearchParams({ countryCode });
+            if (useGeolocation && latlong) {
+                params.set("latlong", latlong);
+                params.set("radius", "200");
+            }
+
+            const res = await fetch(`/api/events?${params.toString()}`);
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data?.error || "API error");
+            }
+
+            if (Array.isArray(data?.events)) {
+                return {
+                    events: data.events as Event[],
+                    eventbriteOrgId: data?.eventbriteOrgId || null,
+                };
+            }
+
+            const items = data?._embedded?.events || [];
+            const mapped: Event[] = items.map((item: any) => ({
+                id: `tm_${item.id}`,
+                source: "ticketmaster",
+                sourceId: item.id,
+                title: item.name,
+                description: item.info || "",
+                image: pickBestImage(item),
+                date: item.dates?.start?.localDate || "",
+                time: item.dates?.start?.localTime || "",
+                url: item?.url || "",
+                locationName: item._embedded?.venues?.[0]?.name || "",
+                address: item._embedded?.venues?.[0]?.address?.line1 || "",
+                city: item._embedded?.venues?.[0]?.city?.name || "",
+                latitude:
+                    parseFloat(item._embedded?.venues?.[0]?.location?.latitude) || 0,
+                longitude:
+                    parseFloat(item._embedded?.venues?.[0]?.location?.longitude) || 0,
+                price: null,
+                category: item.classifications?.[0]?.segment?.name || "",
+            }));
+
+            return {
+                events: mapped,
+                eventbriteOrgId: null,
+            };
+        };
+
         const load = async () => {
             try {
                 setLoading(true);
                 setError(null);
-                const params = new URLSearchParams({ countryCode });
-                if (latlong) {
-                    params.set("latlong", latlong);
-                    params.set("radius", "200");
-                }
-                const res = await fetch(`/api/events?${params.toString()}`);
-                const data = await res.json();
-                if (!res.ok) {
-                    throw new Error(data?.error || "API error");
-                }
-
-                if (Array.isArray(data?.events)) {
-                    if (!cancelled) {
-                        setEvents(data.events as Event[]);
-                        setEventbriteOrgId(data?.eventbriteOrgId || null);
-                    }
-                    return;
-                }
-
-                const items = data?._embedded?.events || [];
-                const mapped: Event[] = items.map((item: any) => ({
-                    id: `tm_${item.id}`,
-                    source: "ticketmaster",
-                    sourceId: item.id,
-                    title: item.name,
-                    description: item.info || "",
-                    image: pickBestImage(item),
-                    date: item.dates?.start?.localDate || "",
-                    time: item.dates?.start?.localTime || "",
-                    url: item?.url || "",
-                    locationName: item._embedded?.venues?.[0]?.name || "",
-                    address: item._embedded?.venues?.[0]?.address?.line1 || "",
-                    city: item._embedded?.venues?.[0]?.city?.name || "",
-                    latitude:
-                        parseFloat(item._embedded?.venues?.[0]?.location?.latitude) || 0,
-                    longitude:
-                        parseFloat(item._embedded?.venues?.[0]?.location?.longitude) || 0,
-                    price: null,
-                    category: item.classifications?.[0]?.segment?.name || "",
-                }));
+                setGeoFallbackMessage(null);
 
                 if (!cancelled) {
-                    setEvents(mapped);
+                    const nearEvents = await fetchEvents(Boolean(latlong));
+                    let nextEvents = nearEvents.events;
+                    let nextEventbriteOrgId = nearEvents.eventbriteOrgId;
+                    let nextGeoFallbackMessage: string | null = null;
+
+                    if (latlong && nearEvents.events.length === 0) {
+                        const fallbackEvents = await fetchEvents(false);
+                        nextEvents = fallbackEvents.events;
+                        nextEventbriteOrgId = fallbackEvents.eventbriteOrgId;
+                        nextGeoFallbackMessage =
+                            "Aucun evenement n'a ete trouve autour de vous. Affichage des resultats correspondant aux filtres sans contrainte de proximite.";
+                    }
+
+                    if (cancelled) return;
+
+                    setEvents(nextEvents);
+                    setEventbriteOrgId(nextEventbriteOrgId);
+                    setGeoFallbackMessage(nextGeoFallbackMessage);
                 }
             } catch (err: any) {
                 if (!cancelled) setError(err?.message || "Erreur inconnue");
@@ -305,6 +333,11 @@ export default function Home() {
                         <div className="mt-3 rounded-xl border border-black/10 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
                             {geoError} Les evenements affiches ne sont pas filtres par
                             proximite.
+                        </div>
+                    ) : null}
+                    {geoFallbackMessage ? (
+                        <div className="mt-3 rounded-xl border border-black/10 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800">
+                            {geoFallbackMessage}
                         </div>
                     ) : null}
 
