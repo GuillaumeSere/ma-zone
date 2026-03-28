@@ -311,7 +311,9 @@ export default function Home() {
                         Evenements autour de moi
                     </h2>
                     <p className="mt-2 text-sm text-gray-600">
-                        Trouvez les meilleures sorties, concerts et festivals en un clic.
+                        Découvrez en temps réel les événements autour de vous grâce à la géolocalisation.
+                        Explorez, filtrez selon vos envies et enregistrez vos coups de cœur en favoris
+                        pour ne rien manquer de vos prochaines sorties.
                     </p>
                 </div>
                 <div className="rounded-2xl bg-white/95 p-4 text-gray-900 ring-1 ring-black/10 shadow-sm">
