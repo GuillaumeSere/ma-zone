@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Event } from "../types/event";
 import { formatFrenchDateTime } from "../lib/date";
@@ -48,11 +49,13 @@ export default function EventCard({
     >
       <div className="relative">
       {hasImage ? (
-        <img
+        <Image
           src={event.image}
           alt={event.title}
+          width={800}
+          height={352}
+          unoptimized
           className="h-44 w-full object-cover transition duration-300 group-hover:scale-[1.02]"
-          loading="lazy"
         />
       ) : (
         <div className="h-44 w-full bg-linear-to-br from-orange-100 via-rose-100 to-amber-100" />
@@ -64,7 +67,7 @@ export default function EventCard({
             onToggleFavorite?.(event);
           }}
           className={[
-            "absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full",
+            "absolute cursor-pointer right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full",
             "text-lg shadow-lg ring-1 transition",
             isFavorite
               ? "bg-black/90 text-white ring-black/20"

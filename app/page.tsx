@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import MapClient from "./components/Map/MapClient";
 import EventList from "./components/EventList";
@@ -18,15 +19,82 @@ const COUNTRY_OPTIONS = [
     { code: "ALL", label: "Monde (ALL)" },
 ];
 
-function pickBestImage(item: any): string {
-    const images = item?.images;
+type TicketmasterImage = {
+    url?: string;
+    width?: number;
+};
+
+type TicketmasterClassification = {
+    segment?: { name?: string };
+    genre?: { name?: string };
+    subGenre?: { name?: string };
+    type?: { name?: string };
+    subType?: { name?: string };
+};
+
+type TicketmasterFallbackItem = {
+    id?: string;
+    name?: string;
+    info?: string;
+    url?: string;
+    images?: TicketmasterImage[];
+    dates?: {
+        start?: {
+            localDate?: string;
+            localTime?: string;
+        };
+    };
+    classifications?: TicketmasterClassification[];
+    _embedded?: {
+        venues?: Array<{
+            name?: string;
+            address?: { line1?: string };
+            city?: { name?: string };
+            location?: { latitude?: string; longitude?: string };
+        }>;
+    };
+};
+
+type ApiEventsResponse = {
+    events?: Event[];
+    eventbriteOrgId?: string | null;
+    _embedded?: {
+        events?: TicketmasterFallbackItem[];
+    };
+    error?: string;
+};
+
+function pickBestImage(item: TicketmasterFallbackItem): string {
+    const images = item.images;
     if (!Array.isArray(images) || images.length === 0) return "";
 
     const preferred = images
-        .filter((img: any) => img?.url)
-        .sort((a: any, b: any) => (b?.width || 0) - (a?.width || 0));
+        .filter(
+            (img): img is TicketmasterImage & { url: string } =>
+                typeof img.url === "string" && img.url.length > 0
+        )
+        .sort((a, b) => (b.width || 0) - (a.width || 0));
 
     return preferred[0]?.url || "";
+}
+
+function getTicketmasterCategory(item: TicketmasterFallbackItem): string {
+    const candidates = (item.classifications || []).flatMap((classification) => [
+        classification?.genre?.name,
+        classification?.subGenre?.name,
+        classification?.segment?.name,
+        classification?.type?.name,
+        classification?.subType?.name,
+    ]);
+
+    return (
+        candidates.find(
+            (value: unknown): value is string =>
+                typeof value === "string" &&
+                value.trim().length > 0 &&
+                value.trim().toLowerCase() !== "undefined"
+        ) || ""
+    );
 }
 
 export default function Home() {
@@ -103,39 +171,39 @@ export default function Home() {
             }
 
             const res = await fetch(`/api/events?${params.toString()}`);
-            const data = await res.json();
+            const data = (await res.json()) as ApiEventsResponse;
 
             if (!res.ok) {
-                throw new Error(data?.error || "API error");
+                throw new Error(data.error || "API error");
             }
 
-            if (Array.isArray(data?.events)) {
+            if (Array.isArray(data.events)) {
                 return {
-                    events: data.events as Event[],
-                    eventbriteOrgId: data?.eventbriteOrgId || null,
+                    events: data.events,
+                    eventbriteOrgId: data.eventbriteOrgId || null,
                 };
             }
 
-            const items = data?._embedded?.events || [];
-            const mapped: Event[] = items.map((item: any) => ({
+            const items = data._embedded?.events || [];
+            const mapped: Event[] = items.map((item) => ({
                 id: `tm_${item.id}`,
                 source: "ticketmaster",
-                sourceId: item.id,
-                title: item.name,
+                sourceId: item.id || "",
+                title: item.name || "",
                 description: item.info || "",
                 image: pickBestImage(item),
                 date: item.dates?.start?.localDate || "",
                 time: item.dates?.start?.localTime || "",
-                url: item?.url || "",
+                url: item.url || "",
                 locationName: item._embedded?.venues?.[0]?.name || "",
                 address: item._embedded?.venues?.[0]?.address?.line1 || "",
                 city: item._embedded?.venues?.[0]?.city?.name || "",
                 latitude:
-                    parseFloat(item._embedded?.venues?.[0]?.location?.latitude) || 0,
+                    parseFloat(item._embedded?.venues?.[0]?.location?.latitude || "") || 0,
                 longitude:
-                    parseFloat(item._embedded?.venues?.[0]?.location?.longitude) || 0,
+                    parseFloat(item._embedded?.venues?.[0]?.location?.longitude || "") || 0,
                 price: null,
-                category: item.classifications?.[0]?.segment?.name || "",
+                category: getTicketmasterCategory(item),
             }));
 
             return {
@@ -170,8 +238,9 @@ export default function Home() {
                     setEventbriteOrgId(nextEventbriteOrgId);
                     setGeoFallbackMessage(nextGeoFallbackMessage);
                 }
-            } catch (err: any) {
-                if (!cancelled) setError(err?.message || "Erreur inconnue");
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : "Erreur inconnue";
+                if (!cancelled) setError(message);
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -197,7 +266,7 @@ export default function Home() {
                 setGeoError(null);
             },
             (err) => {
-                setGeoError(err?.message || "Geolocation indisponible.");
+                setGeoError(err.message || "Geolocation indisponible.");
             },
             {
                 enableHighAccuracy: false,
@@ -239,6 +308,12 @@ export default function Home() {
         );
         return ["ALL", ...values.sort()];
     }, [events]);
+
+    useEffect(() => {
+        if (!categories.includes(category)) {
+            setCategory("ALL");
+        }
+    }, [categories, category]);
 
     const filteredEvents = useMemo(() => {
         const q = query.trim().toLowerCase();
@@ -303,6 +378,59 @@ export default function Home() {
         }
     };
 
+    const renderFavoriteItem = (event: Event) => (
+        <div
+            key={event.id}
+            className="relative min-w-0 overflow-hidden rounded-xl border border-black/5 bg-linear-to-br from-white via-rose-50 to-amber-50 p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+        >
+            <button
+                type="button"
+                onClick={() => handleToggleFavorite(event)}
+                className="absolute cursor-pointer right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-base text-gray-900 shadow-sm ring-1 ring-black/10 transition hover:bg-black/90 hover:text-white"
+                aria-label={`Retirer ${event.title} des favoris`}
+            >
+                <span className="leading-none">☆</span>
+            </button>
+
+            <button
+                type="button"
+                onClick={() => handleSelectEvent(event)}
+                className="block w-full min-w-0 pr-10"
+            >
+                <div className="flex items-start gap-3">
+                    <div className="h-12 w-12 flex-none overflow-hidden rounded-lg bg-black/5">
+                        {event.image ? (
+                            <Image
+                                src={event.image}
+                                alt={event.title}
+                                width={48}
+                                height={48}
+                                unoptimized
+                                className="h-full w-full object-cover"
+                            />
+                        ) : null}
+                    </div>
+                    <div className="min-w-0 text-left">
+                        <p
+                            className="text-sm font-semibold text-gray-900"
+                            style={{
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                            }}
+                        >
+                            {event.title}
+                        </p>
+                        <p className="mt-1 truncate text-xs text-gray-500">
+                            Le {formatFrenchDateTime(event.date, event.time)}
+                        </p>
+                    </div>
+                </div>
+            </button>
+        </div>
+    );
+
     return (
         <main className="min-h-screen">
             <div className="mx-auto max-w-6xl p-6 space-y-10">
@@ -321,7 +449,7 @@ export default function Home() {
                         <button
                             type="button"
                             onClick={() => setShowFilters((v) => !v)}
-                            className="h-10 rounded-xl bg-black/90 px-4 text-sm font-semibold text-white shadow-md shadow-black/20 transition hover:-translate-y-0.5"
+                            className="h-10 cursor-pointer rounded-xl bg-black/90 px-4 text-sm font-semibold text-white shadow-md shadow-black/20 transition hover:-translate-y-0.5"
                         >
                             Filtres
                         </button>
@@ -444,45 +572,7 @@ export default function Home() {
                                 Ajoute une etoile pour retrouver tes evenements ici.
                             </p>
                         ) : (
-                            <div className="mt-4 space-y-3">
-                                {favoriteEvents.map((event) => (
-                                    <button
-                                        key={event.id}
-                                        type="button"
-                                        onClick={() => handleSelectEvent(event)}
-                                        className="w-full min-w-0 overflow-hidden rounded-xl border border-black/5 bg-linear-to-br from-white via-rose-50 to-amber-50 p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-                                    >
-                                        <div className="flex items-start gap-3">
-                                            <div className="h-12 w-12 flex-none overflow-hidden rounded-lg bg-black/5">
-                                                {event.image ? (
-                                                    <img
-                                                        src={event.image}
-                                                        alt={event.title}
-                                                        className="h-full w-full object-cover"
-                                                        loading="lazy"
-                                                    />
-                                                ) : null}
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p
-                                                    className="text-sm font-semibold text-gray-900"
-                                                    style={{
-                                                        display: "-webkit-box",
-                                                        WebkitLineClamp: 2,
-                                                        WebkitBoxOrient: "vertical",
-                                                        overflow: "hidden",
-                                                    }}
-                                                >
-                                                    {event.title}
-                                                </p>
-                                                <p className="mt-1 truncate text-xs text-gray-500">
-                                                    Le {formatFrenchDateTime(event.date, event.time)}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
+                            <div className="mt-4 space-y-3">{favoriteEvents.map(renderFavoriteItem)}</div>
                         )}
                     </section>
 
@@ -514,45 +604,7 @@ export default function Home() {
                                     Ajoute une etoile pour retrouver tes evenements ici.
                                 </p>
                             ) : (
-                                <div className="mt-4 space-y-3">
-                                    {favoriteEvents.map((event) => (
-                                        <button
-                                            key={event.id}
-                                            type="button"
-                                            onClick={() => handleSelectEvent(event)}
-                                            className="w-full min-w-0 overflow-hidden rounded-xl border border-black/5 bg-linear-to-br from-white via-rose-50 to-amber-50 p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-                                        >
-                                            <div className="flex items-start gap-3">
-                                                <div className="h-12 w-12 flex-none overflow-hidden rounded-lg bg-black/5">
-                                                    {event.image ? (
-                                                        <img
-                                                            src={event.image}
-                                                            alt={event.title}
-                                                            className="h-full w-full object-cover"
-                                                            loading="lazy"
-                                                        />
-                                                    ) : null}
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <p
-                                                        className="text-sm font-semibold text-gray-900"
-                                                        style={{
-                                                            display: "-webkit-box",
-                                                            WebkitLineClamp: 2,
-                                                            WebkitBoxOrient: "vertical",
-                                                            overflow: "hidden",
-                                                        }}
-                                                    >
-                                                        {event.title}
-                                                    </p>
-                                                    <p className="mt-1 text-xs text-gray-500">
-                                                        Le {formatFrenchDateTime(event.date, event.time)}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
+                                <div className="mt-4 space-y-3">{favoriteEvents.map(renderFavoriteItem)}</div>
                             )}
                         </div>
                     </aside>
@@ -563,7 +615,7 @@ export default function Home() {
                 <button
                     type="button"
                     onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                    className="fixed bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-black/80 text-white shadow-lg shadow-black/20 transition hover:-translate-y-0.5"
+                    className="fixed cursor-pointer bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-black/80 text-white shadow-lg shadow-black/20 transition hover:-translate-y-0.5"
                     aria-label="Remonter en haut"
                 >
                     <span className="text-lg leading-none">↑</span>

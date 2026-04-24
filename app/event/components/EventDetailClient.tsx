@@ -1,8 +1,25 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { Event } from "../../types/event";
 import { formatFrenchDateTime } from "../../lib/date";
+
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+type VenueDetail = {
+  name?: string;
+  address?: string;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
+} & Record<string, JsonValue>;
 
 type DetailResponse = {
   source: "ticketmaster" | "eventbrite";
@@ -17,18 +34,18 @@ type DetailResponse = {
     time?: string;
     status?: string;
     timezone?: string;
-    venue?: any;
-    organizer?: any;
-    category?: any;
-    priceRanges?: any[];
-    ticketAvailability?: any;
-    ticketLimit?: any;
-    ageRestrictions?: any;
-    classifications?: any[];
+    venue?: VenueDetail | Record<string, JsonValue> | null;
+    organizer?: JsonValue;
+    category?: JsonValue;
+    priceRanges?: JsonValue[];
+    ticketAvailability?: JsonValue;
+    ticketLimit?: JsonValue;
+    ageRestrictions?: JsonValue;
+    classifications?: JsonValue[];
     capacity?: number | null;
     isFree?: boolean | null;
   };
-  raw?: any;
+  raw?: JsonValue;
   error?: string;
   details?: string;
 };
@@ -104,9 +121,9 @@ export default function EventDetailClient({
           setData(json);
           setLoading(false);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!cancelled) {
-          setError(err?.message || "Erreur inconnue");
+          setError(err instanceof Error ? err.message : "Erreur inconnue");
           setLoading(false);
         }
       }
@@ -153,7 +170,14 @@ export default function EventDetailClient({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
             <div className="w-full lg:w-90">
               {d?.images?.[0] ? (
-                <img src={d.images[0]} alt={d.title} className="h-64 w-full rounded-2xl object-cover" />
+                <Image
+                  src={d.images[0]}
+                  alt={d.title}
+                  width={720}
+                  height={256}
+                  unoptimized
+                  className="h-64 w-full rounded-2xl object-cover"
+                />
               ) : (
                 <div className="h-64 w-full rounded-2xl bg-linear-to-br from-orange-100 via-rose-100 to-amber-100" />
               )}

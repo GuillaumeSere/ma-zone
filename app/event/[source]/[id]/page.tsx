@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { use, useEffect, useState } from "react";
 import type { Event } from "../../../types/event";
 import { formatFrenchDateTime } from "../../../lib/date";
@@ -52,9 +53,9 @@ export default function EventDetailPage({
           setError("Impossible de charger les details (aucune donnee en cache).");
           setLoading(false);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!cancelled) {
-          setError(err?.message || "Erreur inconnue");
+          setError(err instanceof Error ? err.message : "Erreur inconnue");
           setLoading(false);
         }
       }
@@ -104,9 +105,12 @@ export default function EventDetailPage({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
             <div className="w-full lg:w-90">
               {d?.image ? (
-                <img
+                <Image
                   src={d.image}
                   alt={d.title}
+                  width={720}
+                  height={256}
+                  unoptimized
                   className="h-64 w-full rounded-2xl object-cover"
                 />
               ) : (

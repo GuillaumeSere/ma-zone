@@ -2,53 +2,103 @@ import { NextResponse } from "next/server";
 
 type Source = "ticketmaster" | "eventbrite";
 
-function normalizeTicketmaster(item: any) {
-  const images = Array.isArray(item?.images)
+type TicketmasterImage = {
+  url?: string;
+  width?: number;
+};
+
+type TicketmasterDetail = {
+  id?: string;
+  name?: string;
+  info?: string;
+  pleaseNote?: string;
+  url?: string;
+  images?: TicketmasterImage[];
+  dates?: {
+    start?: {
+      localDate?: string;
+      localTime?: string;
+    };
+    status?: {
+      code?: string;
+    };
+    timezone?: string;
+  };
+  priceRanges?: unknown[];
+  ticketLimit?: unknown;
+  ageRestrictions?: unknown;
+  classifications?: unknown[];
+  promoter?: unknown;
+  seatmap?: unknown;
+  accessibility?: unknown;
+  _embedded?: {
+    venues?: unknown[];
+  };
+};
+
+type EventbriteDetail = {
+  id?: string;
+  name?: { text?: string };
+  description?: { text?: string };
+  url?: string;
+  logo?: { url?: string };
+  start?: { local?: string; timezone?: string };
+  status?: string;
+  is_free?: boolean | null;
+  capacity?: number | null;
+  category?: unknown;
+  organizer?: unknown;
+  venue?: unknown;
+  ticket_availability?: unknown;
+};
+
+function normalizeTicketmaster(item: TicketmasterDetail) {
+  const images = Array.isArray(item.images)
     ? item.images
-        .filter((img: any) => img?.url)
-        .sort((a: any, b: any) => (b?.width || 0) - (a?.width || 0))
+        .filter((img): img is TicketmasterImage & { url: string } => typeof img.url === "string" && img.url.length > 0)
+        .sort((a, b) => (b.width || 0) - (a.width || 0))
     : [];
 
   return {
     source: "ticketmaster",
-    sourceId: item?.id || "",
-    title: item?.name || "",
-    description: item?.info || item?.pleaseNote || "",
-    url: item?.url || "",
-    images: images.map((img: any) => img.url),
-    date: item?.dates?.start?.localDate || "",
-    time: item?.dates?.start?.localTime || "",
-    status: item?.dates?.status?.code || "",
-    timezone: item?.dates?.timezone || "",
-    priceRanges: item?.priceRanges || [],
-    ticketLimit: item?.ticketLimit || null,
-    ageRestrictions: item?.ageRestrictions || null,
-    classifications: item?.classifications || [],
-    venue: item?._embedded?.venues?.[0] || null,
-    promoter: item?.promoter || null,
-    seatmap: item?.seatmap || null,
-    accessibility: item?.accessibility || null,
+    sourceId: item.id || "",
+    title: item.name || "",
+    description: item.info || item.pleaseNote || "",
+    url: item.url || "",
+    images: images.map((img) => img.url),
+    date: item.dates?.start?.localDate || "",
+    time: item.dates?.start?.localTime || "",
+    status: item.dates?.status?.code || "",
+    timezone: item.dates?.timezone || "",
+    priceRanges: item.priceRanges || [],
+    ticketLimit: item.ticketLimit || null,
+    ageRestrictions: item.ageRestrictions || null,
+    classifications: item.classifications || [],
+    venue: item._embedded?.venues?.[0] || null,
+    promoter: item.promoter || null,
+    seatmap: item.seatmap || null,
+    accessibility: item.accessibility || null,
   };
 }
 
-function normalizeEventbrite(item: any) {
+function normalizeEventbrite(item: EventbriteDetail) {
   return {
     source: "eventbrite",
-    sourceId: item?.id || "",
-    title: item?.name?.text || "",
-    description: item?.description?.text || "",
-    url: item?.url || "",
-    images: item?.logo?.url ? [item.logo.url] : [],
-    date: (item?.start?.local || "").split("T")[0] || "",
-    time: (item?.start?.local || "").split("T")[1]?.slice(0, 5) || "",
-    status: item?.status || "",
-    timezone: item?.start?.timezone || "",
-    isFree: item?.is_free ?? null,
-    capacity: item?.capacity ?? null,
-    category: item?.category || null,
-    organizer: item?.organizer || null,
-    venue: item?.venue || null,
-    ticketAvailability: item?.ticket_availability || null,
+    sourceId: item.id || "",
+    title: item.name?.text || "",
+    description: item.description?.text || "",
+    url: item.url || "",
+    images: item.logo?.url ? [item.logo.url] : [],
+    date: (item.start?.local || "").split("T")[0] || "",
+    time: (item.start?.local || "").split("T")[1]?.slice(0, 5) || "",
+    status: item.status || "",
+    timezone: item.start?.timezone || "",
+    isFree: item.is_free ?? null,
+    capacity: item.capacity ?? null,
+    category: item.category || null,
+    organizer: item.organizer || null,
+    venue: item.venue || null,
+    ticketAvailability: item.ticket_availability || null,
   };
 }
 
@@ -92,7 +142,7 @@ export async function GET(
       );
     }
 
-    const data = await res.json();
+    const data = (await res.json()) as TicketmasterDetail;
     return NextResponse.json({
       source,
       detail: normalizeTicketmaster(data),
@@ -126,7 +176,7 @@ export async function GET(
     );
   }
 
-  const data = await res.json();
+  const data = (await res.json()) as EventbriteDetail;
   return NextResponse.json({
     source,
     detail: normalizeEventbrite(data),

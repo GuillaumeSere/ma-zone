@@ -3,12 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
+import Image from "next/image";
 import Link from "next/link";
 import { Event } from "../../types/event";
 import "leaflet/dist/leaflet.css";
 
+type LeafletIconDefaultPrototype = typeof L.Icon.Default.prototype & {
+  _getIconUrl?: string;
+};
+
 // Fix icones Leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+delete (L.Icon.Default.prototype as LeafletIconDefaultPrototype)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
   iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
@@ -56,7 +61,7 @@ function MapFocus({
     if (marker) {
       marker.openPopup();
     }
-  }, [map, selectedEvent]);
+  }, [map, markerRefs, selectedEvent]);
 
   return null;
 }
@@ -68,13 +73,8 @@ export default function Map({
   selectedEvent: SelectedEvent | null;
   events: Event[];
 }) {
-  const [isClient, setIsClient] = useState(false);
   const [position, setPosition] = useState<[number, number] | null>(null);
   const markerRefs = useRef<Record<string, L.Marker>>({});
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,7 +102,7 @@ export default function Map({
     };
   }, []);
 
-  if (!isClient || !position) return <p>Localisation en cours...</p>;
+  if (typeof window === "undefined" || !position) return <p>Localisation en cours...</p>;
 
   return (
     <div className="h-[60vh] min-h-90 w-full rounded-2xl overflow-hidden">
@@ -140,11 +140,13 @@ export default function Map({
                 <Popup>
                   <div className="space-y-2">
                     {event.image ? (
-                      <img
+                      <Image
                         src={event.image}
                         alt={event.title}
+                        width={320}
+                        height={112}
+                        unoptimized
                         className="h-28 w-full rounded-lg object-cover"
-                        loading="lazy"
                       />
                     ) : null}
                     <h3 className="font-bold">{event.title}</h3>
