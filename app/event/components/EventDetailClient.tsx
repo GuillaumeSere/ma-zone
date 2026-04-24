@@ -101,7 +101,7 @@ export default function EventDetailClient({
                 longitude: cached.longitude,
               },
             },
-            raw: cached,
+           raw:cached.category ? { category: cached.category } : undefined,
           });
           // show cached data immediately, but continue to fetch fresh details
           setLoading(false);
