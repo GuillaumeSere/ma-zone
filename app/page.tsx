@@ -343,6 +343,27 @@ export default function Home() {
         });
     }, [events, query, category, freeOnly, dateFrom, dateTo]);
 
+    const activeFilterCount = useMemo(
+        () =>
+            [
+                countryCode !== "FR",
+                category !== "ALL",
+                Boolean(dateFrom),
+                Boolean(dateTo),
+                freeOnly,
+            ].filter(Boolean).length,
+        [category, countryCode, dateFrom, dateTo, freeOnly]
+    );
+
+    const resetFilters = () => {
+        setQuery("");
+        setCountryCode("FR");
+        setCategory("ALL");
+        setDateFrom("");
+        setDateTo("");
+        setFreeOnly(false);
+    };
+
     const favoriteEvents = useMemo(() => {
         if (!favoriteIds.size) return [];
         return events.filter((e) => favoriteIds.has(e.id));
@@ -381,24 +402,24 @@ export default function Home() {
     const renderFavoriteItem = (event: Event) => (
         <div
             key={event.id}
-            className="relative min-w-0 overflow-hidden rounded-xl border border-black/5 bg-linear-to-br from-white via-rose-50 to-amber-50 p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="group relative min-w-0 overflow-hidden rounded-2xl border border-black/5 bg-white p-3 text-left shadow-sm transition hover:border-orange-200 hover:shadow-md"
         >
             <button
                 type="button"
                 onClick={() => handleToggleFavorite(event)}
-                className="absolute cursor-pointer right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-base text-gray-900 shadow-sm ring-1 ring-black/10 transition hover:bg-black/90 hover:text-white"
+                className="absolute right-2 top-2 z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-zinc-100 text-sm text-zinc-500 transition hover:bg-orange-100 hover:text-orange-600"
                 aria-label={`Retirer ${event.title} des favoris`}
             >
-                <span className="leading-none">☆</span>
+                <span className="leading-none">×</span>
             </button>
 
             <button
                 type="button"
                 onClick={() => handleSelectEvent(event)}
-                className="block w-full min-w-0 pr-10"
+                className="block w-full min-w-0 cursor-pointer pr-8"
             >
                 <div className="flex items-start gap-3">
-                    <div className="h-12 w-12 flex-none overflow-hidden rounded-lg bg-black/5">
+                    <div className="h-13 w-13 flex-none overflow-hidden rounded-xl bg-orange-50">
                         {event.image ? (
                             <Image
                                 src={event.image}
@@ -422,7 +443,7 @@ export default function Home() {
                         >
                             {event.title}
                         </p>
-                        <p className="mt-1 truncate text-xs text-gray-500">
+                        <p className="mt-1 truncate text-xs font-medium text-orange-600">
                             Le {formatFrenchDateTime(event.date, event.time)}
                         </p>
                     </div>
@@ -431,152 +452,187 @@ export default function Home() {
         </div>
     );
 
+    const fieldClassName =
+        "h-12 w-full rounded-2xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 transition placeholder:text-zinc-400 hover:border-zinc-300 focus:border-orange-400 focus:outline-none focus:ring-4 focus:ring-orange-100";
+
     return (
-        <main className="min-h-screen">
-            <div className="mx-auto max-w-6xl p-6 space-y-10">
-                <div className="rounded-3xl bg-linear-to-br from-orange-50 via-rose-50 to-amber-50 p-6 ring-1 ring-black/5">
-                    <h2 className="text-xl md:text-3xl font-black text-gray-900">
-                        Evenements autour de moi
-                    </h2>
-                    <p className="mt-2 text-sm text-gray-600">
-                        Découvrez en temps réel les événements autour de vous grâce à la géolocalisation.
-                        Explorez, filtrez selon vos envies et enregistrez vos coups de cœur en favoris
-                        pour ne rien manquer de vos prochaines sorties.
-                    </p>
+        <main className="min-h-screen overflow-hidden bg-[#f7f6f2]">
+            <section className="relative overflow-hidden bg-zinc-950 text-white">
+                <div className="absolute -right-24 -top-28 h-80 w-80 rounded-full bg-orange-500/25 blur-3xl" />
+                <div className="absolute -bottom-40 left-1/4 h-80 w-80 rounded-full bg-rose-500/15 blur-3xl" />
+                <div className="relative mx-auto max-w-7xl px-5 pb-28 pt-14 sm:px-8 sm:pb-32 sm:pt-20">
+                    <div className="max-w-3xl">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs font-bold text-zinc-200 backdrop-blur">
+                            <span className={`h-2 w-2 rounded-full ${latlong ? "bg-emerald-400" : "animate-pulse bg-orange-400"}`} />
+                            {latlong ? "Autour de votre position" : "Localisation en cours…"}
+                        </div>
+                        <h1 className="mt-6 text-4xl font-black leading-[0.98] tracking-[-0.055em] sm:text-6xl lg:text-7xl">
+                            Votre prochaine sortie
+                            <span className="block text-orange-400">commence ici.</span>
+                        </h1>
+                        <p className="mt-6 max-w-2xl text-base leading-relaxed text-zinc-400 sm:text-lg">
+                            Concerts, festivals, expositions et pépites locales : explorez ce qui se passe autour de vous, puis partez en un clic.
+                        </p>
+                    </div>
+
+                    <div className="mt-10 flex flex-wrap gap-8 sm:gap-12">
+                        <div>
+                            <p className="text-2xl font-black text-white">{loading ? "—" : filteredEvents.length}</p>
+                            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-zinc-500">Événements</p>
+                        </div>
+                        <div>
+                            <p className="text-2xl font-black text-white">{favoriteEvents.length}</p>
+                            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-zinc-500">Favoris</p>
+                        </div>
+                        <div>
+                            <p className="text-2xl font-black text-white">{eventbriteOrgId ? "2" : "1"}</p>
+                            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-zinc-500">Source{eventbriteOrgId ? "s" : ""}</p>
+                        </div>
+                    </div>
                 </div>
-                <div className="rounded-2xl bg-white/95 p-4 text-gray-900 ring-1 ring-black/10 shadow-sm">
-                    <div className="flex flex-wrap items-center gap-3">
+            </section>
+
+            <div className="relative mx-auto -mt-16 max-w-7xl space-y-12 px-5 pb-8 sm:px-8">
+                <section aria-label="Recherche et filtres" className="rounded-[2rem] border border-black/5 bg-white p-4 shadow-2xl shadow-black/10 sm:p-6">
+                    <div className="flex flex-col gap-3 lg:flex-row">
+                        <div className="relative flex-1">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                <circle cx="11" cy="11" r="7" />
+                                <path d="m20 20-4-4" />
+                            </svg>
+                            <label htmlFor="event-search" className="sr-only">Rechercher un événement</label>
+                            <input
+                                id="event-search"
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                placeholder="Artiste, événement, ville…"
+                                className={`${fieldClassName} pl-12 pr-11`}
+                            />
+                            {query ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setQuery("")}
+                                    className="absolute right-3 top-1/2 grid h-7 w-7 -translate-y-1/2 cursor-pointer place-items-center rounded-full bg-zinc-100 text-sm text-zinc-500 transition hover:bg-zinc-200"
+                                    aria-label="Effacer la recherche"
+                                >
+                                    ×
+                                </button>
+                            ) : null}
+                        </div>
                         <button
                             type="button"
-                            onClick={() => setShowFilters((v) => !v)}
-                            className="h-10 cursor-pointer rounded-xl bg-black/90 px-4 text-sm font-semibold text-white shadow-md shadow-black/20 transition hover:-translate-y-0.5"
+                            onClick={() => setShowFilters((value) => !value)}
+                            aria-expanded={showFilters}
+                            aria-controls="advanced-filters"
+                            className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-5 text-sm font-bold text-white transition hover:bg-orange-600 lg:min-w-38"
                         >
+                            <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                <path d="M4 6h16M7 12h10M10 18h4" />
+                            </svg>
                             Filtres
+                            {activeFilterCount ? (
+                                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-orange-400 px-1 text-[10px] text-zinc-950">{activeFilterCount}</span>
+                            ) : null}
                         </button>
-                        {eventbriteOrgId ? (
-                            <span className="rounded-full bg-black/10 px-3 py-1 text-xs font-semibold text-gray-700">
-                                Eventbrite org: {eventbriteOrgId}
-                            </span>
+                        {query || activeFilterCount ? (
+                            <button type="button" onClick={resetFilters} className="h-12 cursor-pointer px-3 text-sm font-bold text-zinc-500 transition hover:text-orange-600">
+                                Tout effacer
+                            </button>
                         ) : null}
                     </div>
+
                     {geoError ? (
-                        <div className="mt-3 rounded-xl border border-black/10 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
-                            {geoError} Les evenements affiches ne sont pas filtres par
-                            proximite.
+                        <div role="status" className="mt-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                            <span aria-hidden="true">◎</span>
+                            <p>{geoError} Les événements restent disponibles sans filtre de proximité.</p>
                         </div>
                     ) : null}
                     {geoFallbackMessage ? (
-                        <div className="mt-3 rounded-xl border border-black/10 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800">
+                        <div role="status" className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
                             {geoFallbackMessage}
                         </div>
                     ) : null}
 
                     <div
+                        id="advanced-filters"
                         className={[
-                            "mt-4 grid gap-3",
-                            showFilters ? "grid-cols-1 md:grid-cols-3 lg:grid-cols-5" : "hidden",
+                            "border-t border-black/5 pt-5",
+                            showFilters ? "mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5" : "hidden",
                         ].join(" ")}
                     >
-                        <div className="flex flex-col gap-1">
-                            <label className="text-xs font-semibold text-gray-600">
-                                Recherche
-                            </label>
-                            <input
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                placeholder="Concert, festival..."
-                                className="h-11 rounded-xl border border-black/10 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
-                            />
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                            <label className="text-xs font-semibold text-gray-600">Pays</label>
-                            <select
-                                value={countryCode}
-                                onChange={(e) => setCountryCode(e.target.value)}
-                                className="h-11 rounded-xl border border-black/10 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
-                            >
-                                {COUNTRY_OPTIONS.map((opt) => (
-                                    <option key={opt.code} value={opt.code}>
-                                        {opt.label}
-                                    </option>
+                        <div>
+                            <label htmlFor="country-filter" className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-500">Pays</label>
+                            <select id="country-filter" value={countryCode} onChange={(e) => setCountryCode(e.target.value)} className={fieldClassName}>
+                                {COUNTRY_OPTIONS.map((option) => (
+                                    <option key={option.code} value={option.code}>{option.label}</option>
                                 ))}
                             </select>
                         </div>
-
-                        <div className="flex flex-col gap-1">
-                            <label className="text-xs font-semibold text-gray-600">
-                                Categorie
-                            </label>
-                            <select
-                                value={category}
-                                onChange={(e) => setCategory(e.target.value)}
-                                className="h-11 rounded-xl border border-black/10 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
-                            >
-                                {categories.map((c) => (
-                                    <option key={c} value={c}>
-                                        {c === "ALL" ? "Toutes" : c}
-                                    </option>
+                        <div>
+                            <label htmlFor="category-filter" className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-500">Catégorie</label>
+                            <select id="category-filter" value={category} onChange={(e) => setCategory(e.target.value)} className={fieldClassName}>
+                                {categories.map((value) => (
+                                    <option key={value} value={value}>{value === "ALL" ? "Toutes" : value}</option>
                                 ))}
                             </select>
                         </div>
-
-                        <div className="flex flex-col gap-1">
-                            <label className="text-xs font-semibold text-gray-600">Du</label>
-                            <input
-                                type="date"
-                                value={dateFrom}
-                                onChange={(e) => setDateFrom(e.target.value)}
-                                className="h-11 rounded-xl border border-black/10 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
-                            />
+                        <div>
+                            <label htmlFor="date-from" className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-500">À partir du</label>
+                            <input id="date-from" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={fieldClassName} />
                         </div>
-
-                        <div className="flex flex-col gap-1">
-                            <label className="text-xs font-semibold text-gray-600">Au</label>
-                            <input
-                                type="date"
-                                value={dateTo}
-                                onChange={(e) => setDateTo(e.target.value)}
-                                className="h-11 rounded-xl border border-black/10 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
-                            />
+                        <div>
+                            <label htmlFor="date-to" className="mb-2 block text-xs font-bold uppercase tracking-wider text-zinc-500">Jusqu’au</label>
+                            <input id="date-to" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={fieldClassName} />
                         </div>
-
-                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <input
-                                type="checkbox"
-                                checked={freeOnly}
-                                onChange={(e) => setFreeOnly(e.target.checked)}
-                                className="h-4 w-4 rounded border-black/20"
-                            />
+                        <label className="flex h-12 cursor-pointer items-center gap-3 self-end rounded-2xl border border-zinc-200 bg-zinc-50 px-4 text-sm font-bold text-zinc-700 transition hover:bg-orange-50">
+                            <input type="checkbox" checked={freeOnly} onChange={(e) => setFreeOnly(e.target.checked)} className="h-4 w-4 accent-orange-500" />
                             Gratuit uniquement
                         </label>
                     </div>
-                </div>
-                <div id="map-section">
-                    <MapClient selectedEvent={selectedEvent} events={filteredEvents} />
-                </div>
+                </section>
 
-                <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_clamp(220px,24vw,280px)]">
-                    <section className="lg:hidden rounded-2xl bg-white/90 p-4 shadow-lg shadow-black/10 ring-1 ring-black/5 backdrop-blur">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-black uppercase tracking-wide text-gray-900">
-                                Favoris
-                            </h3>
-                            <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs font-semibold text-gray-800">
-                                {favoriteEvents.length}
+                <section id="map-section" className="scroll-mt-24">
+                    <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+                        <div>
+                            <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Explorer autour de vous</p>
+                            <h2 className="mt-2 text-2xl font-black tracking-tight text-zinc-950 sm:text-3xl">Tout voir sur la carte</h2>
+                        </div>
+                        <p className="text-sm text-zinc-500">{filteredEvents.length} lieu{filteredEvents.length > 1 ? "x" : ""} affiché{filteredEvents.length > 1 ? "s" : ""}</p>
+                    </div>
+                    <div className="overflow-hidden rounded-[2rem] border-6 border-white bg-white shadow-xl shadow-black/8">
+                        <MapClient selectedEvent={selectedEvent} events={filteredEvents} />
+                    </div>
+                </section>
+
+                <section id="events" className="scroll-mt-24">
+                    <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+                        <div>
+                            <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">La sélection <span className="text-black">Ma</span>Zone</p>
+                            <h2 className="mt-2 text-2xl font-black tracking-tight text-zinc-950 sm:text-3xl">Événements à découvrir</h2>
+                        </div>
+                        {!loading ? (
+                            <span className="w-fit rounded-full bg-zinc-200/70 px-3 py-1.5 text-xs font-bold text-zinc-600">
+                                {filteredEvents.length} résultat{filteredEvents.length > 1 ? "s" : ""}
                             </span>
+                        ) : null}
+                    </div>
+
+                    <div id="favorites" className="grid scroll-mt-24 gap-7 lg:grid-cols-[minmax(0,1fr)_280px]">
+                        <div className="lg:hidden rounded-3xl border border-black/5 bg-white p-5 shadow-sm">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="font-black text-zinc-950">Mes favoris</h3>
+                                    <p className="mt-1 text-xs text-zinc-500">Votre sélection personnelle</p>
+                                </div>
+                                <span className="grid h-8 min-w-8 place-items-center rounded-full bg-orange-100 px-2 text-xs font-black text-orange-700">{favoriteEvents.length}</span>
+                            </div>
+                            {favoriteEvents.length === 0 ? (
+                                <p className="mt-5 rounded-2xl bg-zinc-50 p-4 text-sm leading-relaxed text-zinc-500">Touchez l’étoile d’un événement pour le retrouver ici.</p>
+                            ) : (
+                                <div className="mt-4 grid gap-3 sm:grid-cols-2">{favoriteEvents.map(renderFavoriteItem)}</div>
+                            )}
                         </div>
 
-                        {favoriteEvents.length === 0 ? (
-                            <p className="mt-4 text-xs text-gray-500">
-                                Ajoute une etoile pour retrouver tes evenements ici.
-                            </p>
-                        ) : (
-                            <div className="mt-4 space-y-3">{favoriteEvents.map(renderFavoriteItem)}</div>
-                        )}
-                    </section>
-
-                    <div>
                         <EventList
                             onSelectEvent={handleSelectEvent}
                             selectedEventId={selectedEvent?.id ?? null}
@@ -586,36 +642,32 @@ export default function Home() {
                             favoriteIds={favoriteIds}
                             onToggleFavorite={handleToggleFavorite}
                         />
-                    </div>
 
-                    <aside className="hidden lg:block w-full min-w-0">
-                        <div className="sticky top-24 rounded-2xl bg-white/90 p-4 shadow-lg shadow-black/10 ring-1 ring-black/5 backdrop-blur">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-sm font-black uppercase tracking-wide text-gray-900">
-                                    Favoris
-                                </h3>
-                                <span className="rounded-full bg-black/10 px-2 py-0.5 text-xs font-semibold text-gray-800">
-                                    {favoriteEvents.length}
-                                </span>
+                        <aside className="hidden min-w-0 lg:block">
+                            <div className="sticky top-24 rounded-3xl border border-black/5 bg-white p-5 shadow-sm">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h3 className="font-black text-zinc-950">Mes favoris</h3>
+                                        <p className="mt-1 text-xs text-zinc-500">Votre sélection</p>
+                                    </div>
+                                    <span className="grid h-8 min-w-8 place-items-center rounded-full bg-orange-100 px-2 text-xs font-black text-orange-700">{favoriteEvents.length}</span>
+                                </div>
+                                {favoriteEvents.length === 0 ? (
+                                    <p className="mt-5 rounded-2xl bg-zinc-50 p-4 text-sm leading-relaxed text-zinc-500">Ajoutez une étoile pour garder vos coups de cœur à portée de main.</p>
+                                ) : (
+                                    <div className="mt-4 space-y-3">{favoriteEvents.map(renderFavoriteItem)}</div>
+                                )}
                             </div>
-
-                            {favoriteEvents.length === 0 ? (
-                                <p className="mt-4 text-xs text-gray-500">
-                                    Ajoute une etoile pour retrouver tes evenements ici.
-                                </p>
-                            ) : (
-                                <div className="mt-4 space-y-3">{favoriteEvents.map(renderFavoriteItem)}</div>
-                            )}
-                        </div>
-                    </aside>
-                </div>
+                        </aside>
+                    </div>
+                </section>
             </div>
 
             {showScrollTop ? (
                 <button
                     type="button"
                     onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                    className="fixed cursor-pointer bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-black/80 text-white shadow-lg shadow-black/20 transition hover:-translate-y-0.5"
+                    className="fixed bottom-5 right-5 z-50 grid h-12 w-12 cursor-pointer place-items-center rounded-2xl bg-zinc-950 text-white shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:bg-orange-600"
                     aria-label="Remonter en haut"
                 >
                     <span className="text-lg leading-none">↑</span>

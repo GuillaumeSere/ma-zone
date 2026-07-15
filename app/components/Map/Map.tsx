@@ -6,6 +6,7 @@ import L from "leaflet";
 import Image from "next/image";
 import Link from "next/link";
 import { Event } from "../../types/event";
+import DirectionsLink from "../DirectionsLink";
 import "leaflet/dist/leaflet.css";
 
 type LeafletIconDefaultPrototype = typeof L.Icon.Default.prototype & {
@@ -157,7 +158,7 @@ export default function Map({
                     <p className="text-xs text-gray-500">
                       {[event.address, event.city].filter(Boolean).join(", ")}
                     </p>
-                    <div className="pt-1">
+                    <div className="flex flex-wrap gap-2 pt-1">
                       <Link
                         href={`/event/${resolvedSource}/${resolvedSourceId}`}
                         onClick={() => {
@@ -176,6 +177,14 @@ export default function Map({
                       >
                         Voir plus
                       </Link>
+                      <DirectionsLink
+                        latitude={event.latitude}
+                        longitude={event.longitude}
+                        locationName={event.locationName}
+                        address={event.address}
+                        city={event.city}
+                        className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-700"
+                      />
                     </div>
                   </div>
                 </Popup>

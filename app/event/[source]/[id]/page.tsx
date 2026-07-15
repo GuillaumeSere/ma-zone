@@ -5,6 +5,7 @@ import { use, useEffect, useState } from "react";
 import type { Event } from "../../../types/event";
 import { formatFrenchDateTime } from "../../../lib/date";
 import MapClient from "../../../components/Map/MapClient";
+import DirectionsLink from "../../../components/DirectionsLink";
 
 export default function EventDetailPage({
   params,
@@ -144,16 +145,26 @@ export default function EventDetailPage({
                Le {formatFrenchDateTime(d.date, d.time)}
               </p>
 
-              {d.url ? (
-                <a
-                  href={d.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-black/20 transition hover:-translate-y-0.5"
-                >
-                  Billetterie / Lien officiel
-                </a>
-              ) : null}
+              <div className="flex flex-wrap gap-3">
+                {d.url ? (
+                  <a
+                    href={d.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-xl bg-black px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-black/20 transition hover:-translate-y-0.5"
+                  >
+                    Billetterie / Lien officiel
+                  </a>
+                ) : null}
+                <DirectionsLink
+                  latitude={d.latitude}
+                  longitude={d.longitude}
+                  locationName={d.locationName}
+                  address={d.address}
+                  city={d.city}
+                  className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700"
+                />
+              </div>
             </div>
           </div>
         </div>
