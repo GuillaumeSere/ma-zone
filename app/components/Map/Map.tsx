@@ -173,7 +173,7 @@ export default function Map({
                             // ignore storage failures
                           }
                         }}
-                        className="inline-flex items-center gap-2 rounded-full bg-black/90 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5"
+                        className="inline-flex items-center gap-2 rounded-full bg-black/90 px-3 py-1 text-xs font-semibold !text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-black"
                       >
                         Voir plus
                       </Link>
@@ -183,7 +183,7 @@ export default function Map({
                         locationName={event.locationName}
                         address={event.address}
                         city={event.city}
-                        className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-700"
+                        className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold !text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-700"
                       />
                     </div>
                   </div>
