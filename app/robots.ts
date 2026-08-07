@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://ma-zone-60.vercel.app/sitemap.xml",
+    sitemap: "https://ma-zone-evenement.netlify.app/sitemap.xml",
   };
 }

@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ma-zone-60.vercel.app/"), 
+  metadataBase: new URL("https://ma-zone-evenement.netlify.app/"), 
 
   title: {
     default: "Ma Zone – Événements près de vous et dans le monde",
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     "sorties culturelles",
   ],
 
-  authors: [{ name: "Guillaume SERE", url: "https://guillaume-sere.vercel.app/" }],
+  authors: [{ name: "Guillaume SERE", url: "https://guillaume-sere.netlify.app/" }],
   creator: "Guillaume SERE",
   publisher: "Ma Zone",
 
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     title: "Ma Zone – Trouvez les meilleurs événements autour de vous",
     description:
       "Concerts, festivals, expositions, food events et plus encore. Explorez les événements près de vous grâce à Ma Zone.",
-    url: "https://ma-zone-60.vercel.app/",
+    url: "https://ma-zone-evenement.netlify.app/",
     siteName: "Ma Zone",
     images: [
       {
@@ -90,7 +90,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
         <head>
-            <meta name="google-site-verification" content="nwVPqsKRGvHVh9v-Qn4QoawQzNbN99Sfg6usOSlUEhg" />
+           <meta name="google-site-verification" content="hGMCr1W6D99RGbRgZ1WGKJuTdw_Mmqq7rlSObwX_1Ic" />
             <meta name="google-adsense-account" content="ca-pub-1886827333053468"></meta>
         </head>
       <body
