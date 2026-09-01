@@ -493,7 +493,7 @@ export default function Home() {
             </section>
 
             <div className="relative mx-auto -mt-16 max-w-7xl space-y-12 px-5 pb-8 sm:px-8">
-                <section aria-label="Recherche et filtres" className="rounded-[2rem] border border-black/5 bg-white p-4 shadow-2xl shadow-black/10 sm:p-6">
+                <section aria-label="Recherche et filtres" className="rounded-4xl border border-black/5 bg-white p-4 shadow-2xl shadow-black/10 sm:p-6">
                     <div className="flex flex-col gap-3 lg:flex-row">
                         <div className="relative flex-1">
                             <svg viewBox="0 0 24 24" aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -599,7 +599,7 @@ export default function Home() {
                         </div>
                         <p className="text-sm text-zinc-500">{filteredEvents.length} lieu{filteredEvents.length > 1 ? "x" : ""} affiché{filteredEvents.length > 1 ? "s" : ""}</p>
                     </div>
-                    <div className="overflow-hidden rounded-[2rem] border-6 border-white bg-white shadow-xl shadow-black/8">
+                    <div className="overflow-hidden rounded-4xl border-6 border-white bg-white shadow-xl shadow-black/8">
                         <MapClient selectedEvent={selectedEvent} events={filteredEvents} />
                     </div>
                 </section>
