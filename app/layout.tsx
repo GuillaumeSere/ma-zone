@@ -63,24 +63,81 @@ MOTS-CLÉS
 ========================== */
 
 keywords: [
+// Recherche générale
 "événements",
+"événements en France",
+"agenda événements",
+"agenda sorties",
+"agenda culturel",
+"agenda local",
+"agenda événementiel",
+
+// Recherche géolocalisée
 "événements près de moi",
 "événements autour de moi",
+"événements à proximité",
+"sorties près de moi",
+"sorties autour de moi",
+"activités près de moi",
+"que faire près de moi",
+"que faire autour de moi",
+"événements dans ma ville",
+
+// Intentions de recherche
+"que faire aujourd'hui",
+"que faire ce soir",
+"que faire ce week-end",
+"que faire demain",
 "sortir aujourd'hui",
 "sortir ce soir",
 "sorties ce week-end",
-"que faire aujourd'hui",
-"que faire ce week-end",
+"idées de sorties",
+"idées sorties week-end",
+"activité aujourd'hui",
+"activité ce week-end",
+
+// Événements
 "concerts",
+"concerts près de moi",
+"concerts en France",
 "festivals",
+"festivals en France",
 "expositions",
+"expositions près de moi",
 "spectacles",
-"agenda événements",
-"agenda local",
+"spectacles près de moi",
+"théâtre",
+"événements sportifs",
+"événements gratuits",
+"événements familiaux",
+"événements culturels",
+"événements musicaux",
+
+// Sorties et loisirs
+"sorties",
 "sorties culturelles",
+"sorties en famille",
 "activités",
-"événements en France",
+"activités en famille",
+"loisirs",
+"activités de loisirs",
+"idées de sorties en famille",
+"sorties entre amis",
+"que faire en France",
+
+// Découverte locale
+"sortir en France",
+"sorties en France",
+"événements locaux",
+"animations locales",
+"manifestations",
+"agenda culturel local",
+"agenda des sorties",
+"agenda des événements",
+"programme sorties",
+"programme événements"
 ],
+
 
 /* =========================
 ROBOTS GOOGLE
