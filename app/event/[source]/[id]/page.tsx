@@ -134,7 +134,7 @@ export default function EventDetailPage({
   }
 
   return (
-    <main className="min-h-screen bg-[#f7f4ef]">
+    <main className="premium-surface min-h-screen">
       <div className="relative overflow-hidden bg-linear-to-br from-zinc-950 via-zinc-900 to-orange-950 text-white">
         <div className="absolute inset-0 bg-linear-to-r from-orange-500/10 via-transparent to-rose-500/20" />
         <div className="relative mx-auto max-w-6xl px-6 pb-10 pt-8 sm:pb-14 sm:pt-12">
@@ -240,14 +240,14 @@ export default function EventDetailPage({
             <div className="mt-5 overflow-hidden rounded-2xl border border-white/80 bg-white/80">
               <div className="flex flex-col sm:flex-row">
                 {artistInfo.image ? (
-                  <div className="relative h-56 shrink-0 bg-violet-100 sm:h-auto sm:w-52">
+                  <div className="relative h-64 w-full shrink-0 bg-linear-to-br from-violet-100 via-white to-orange-100 sm:h-64 sm:w-56">
                     <Image
                       src={artistInfo.image}
                       alt={`Portrait ou illustration de ${artistInfo.name}`}
                       fill
                       unoptimized
-                      sizes="(max-width: 640px) 100vw, 208px"
-                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, 224px"
+                      className="object-contain p-3"
                     />
                   </div>
                 ) : null}
@@ -296,7 +296,8 @@ export default function EventDetailPage({
             <div className="rounded-2xl border border-rose-100 bg-rose-50/65 p-6 shadow-sm">
               <h2 className="text-lg font-black text-rose-950">Description</h2>
               <p className="mt-3 text-sm leading-7 text-rose-950/75 whitespace-pre-wrap">
-                {d.description || "Aucune description disponible."}
+                {d.description ||
+                  "Les informations détaillées de cet événement sont publiées progressivement. Consultez le lien officiel pour découvrir la programmation, les artistes et les conditions d’accès."}
               </p>
             </div>
 
@@ -315,14 +316,21 @@ export default function EventDetailPage({
                     {[d.address, d.city].filter(Boolean).join(", ")}
                   </p>
                 ) : null}
-                <p>
-                  <span className="font-semibold">Prix:</span>{" "}
-                  {d.price == null
-                    ? "Renseignement au pres de la billetterie"
-                    : d.price === 0
-                    ? "Gratuit"
-                    : `${d.price} EUR`}
-                </p>
+                {d.url ? (
+                  <a
+                    href={d.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1 inline-flex w-fit items-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-orange-500/20 transition hover:-translate-y-0.5 hover:bg-orange-600"
+                  >
+                    Réserver mes billets
+                    <span aria-hidden="true">↗</span>
+                  </a>
+                ) : (
+                  <p className="rounded-xl bg-white/70 p-3 text-sm text-amber-950/65">
+                    Le lien de réservation n&apos;est pas disponible pour cet événement.
+                  </p>
+                )}
               </div>
             </div>
 

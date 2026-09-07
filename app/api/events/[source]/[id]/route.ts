@@ -251,10 +251,12 @@ export async function GET(
     const detail = normalizeTicketmaster(data);
     const artistQuery = detail.artistNames[0] || detail.title;
     const artistInfo = await findArtistInfo(artistQuery);
+    const event = toEvent(source, detail);
+    if (!event.description && artistInfo) event.description = artistInfo.extract;
     return NextResponse.json({
       source,
       detail,
-      event: toEvent(source, detail),
+      event,
       artistNames: detail.artistNames,
       artistInfo,
       raw: data,
@@ -294,10 +296,12 @@ export async function GET(
       ? String((detail.organizer as { name?: unknown }).name || "")
       : "";
   const artistInfo = await findArtistInfo(organizerName || detail.title);
+  const event = toEvent(source, detail);
+  if (!event.description && artistInfo) event.description = artistInfo.extract;
   return NextResponse.json({
     source,
     detail,
-    event: toEvent(source, detail),
+    event,
     artistNames: organizerName ? [organizerName] : [],
     artistInfo,
     raw: data,

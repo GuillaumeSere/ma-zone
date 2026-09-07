@@ -34,7 +34,7 @@ export default function SiteHeader() {
             Carte
           </Link>
           <Link href="/#favorites" className="rounded-full px-4 py-2 text-sm font-semibold text-zinc-600 transition hover:bg-orange-500 hover:text-white">
-            Favoris <span className="ml-1 text-orange-500 transition group-hover:text-white">★</span>
+            Favoris ★
           </Link>
         </nav>
 

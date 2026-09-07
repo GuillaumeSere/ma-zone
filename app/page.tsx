@@ -665,7 +665,7 @@ export default function Home() {
         "h-12 w-full rounded-2xl border border-zinc-200 bg-white px-4 text-sm text-zinc-900 transition placeholder:text-zinc-400 hover:border-zinc-300 focus:border-orange-400 focus:outline-none focus:ring-4 focus:ring-orange-100";
 
     return (
-        <main className="min-h-screen overflow-hidden bg-[#f7f6f2]">
+        <main className="premium-surface min-h-screen overflow-hidden">
             <section className="relative overflow-hidden bg-zinc-950 text-white">
                 <div className="absolute -right-24 -top-28 h-80 w-80 rounded-full bg-orange-500/25 blur-3xl" />
                 <div className="absolute -bottom-40 left-1/4 h-80 w-80 rounded-full bg-rose-500/15 blur-3xl" />
