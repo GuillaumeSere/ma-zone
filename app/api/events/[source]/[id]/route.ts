@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Event } from "../../../../types/event";
 
 type Source = "ticketmaster" | "eventbrite";
 
@@ -102,6 +103,40 @@ function normalizeEventbrite(item: EventbriteDetail) {
   };
 }
 
+function toEvent(source: Source, detail: ReturnType<typeof normalizeTicketmaster> | ReturnType<typeof normalizeEventbrite>): Event {
+  const venue = detail.venue as {
+    name?: string;
+    address?: { line1?: string; address_1?: string; city?: string };
+    city?: { name?: string };
+    location?: { latitude?: string; longitude?: string };
+    latitude?: string;
+    longitude?: string;
+  } | null;
+  const isFree = "isFree" in detail ? detail.isFree : null;
+  const category = "category" in detail && typeof detail.category === "string"
+    ? detail.category
+    : "";
+
+  return {
+    id: `${source === "eventbrite" ? "eb" : "tm"}_${detail.sourceId}`,
+    source,
+    sourceId: detail.sourceId,
+    title: detail.title,
+    description: detail.description,
+    image: detail.images?.[0] || "",
+    url: detail.url,
+    date: detail.date || "",
+    time: detail.time || "",
+    locationName: venue?.name || "",
+    address: venue?.address?.line1 || venue?.address?.address_1 || "",
+    city: venue?.city?.name || venue?.address?.city || "",
+    latitude: Number(venue?.location?.latitude || venue?.latitude) || 0,
+    longitude: Number(venue?.location?.longitude || venue?.longitude) || 0,
+    price: isFree === true ? 0 : null,
+    category,
+  };
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ source: string; id: string }> }
@@ -143,9 +178,11 @@ export async function GET(
     }
 
     const data = (await res.json()) as TicketmasterDetail;
+    const detail = normalizeTicketmaster(data);
     return NextResponse.json({
       source,
-      detail: normalizeTicketmaster(data),
+      detail,
+      event: toEvent(source, detail),
       raw: data,
     });
   }
@@ -177,9 +214,11 @@ export async function GET(
   }
 
   const data = (await res.json()) as EventbriteDetail;
+  const detail = normalizeEventbrite(data);
   return NextResponse.json({
     source,
-    detail: normalizeEventbrite(data),
+    detail,
+    event: toEvent(source, detail),
     raw: data,
   });
 }

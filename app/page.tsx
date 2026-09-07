@@ -97,6 +97,51 @@ function getTicketmasterCategory(item: TicketmasterFallbackItem): string {
     );
 }
 
+function readCachedFavoriteEvents(ids: Set<string>): Record<string, Event> {
+    if (typeof window === "undefined") return {};
+
+    const cached: Record<string, Event> = {};
+    for (const id of ids) {
+        const source = id.startsWith("eb_") ? "eventbrite" : "ticketmaster";
+        const sourceId = id.replace(/^(tm_|eb_)/, "");
+        if (!sourceId) continue;
+
+        try {
+            const raw = window.localStorage.getItem(`ma-zone:event:${source}:${sourceId}`);
+            if (raw) {
+                const event = JSON.parse(raw) as Event;
+                if (event.id === id) cached[id] = event;
+            }
+        } catch {
+            // ignore malformed or unavailable cache entries
+        }
+    }
+
+    return cached;
+}
+
+function readStoredFavoriteEvents(): Record<string, Event> {
+    if (typeof window === "undefined") return {};
+
+    try {
+        const raw = window.localStorage.getItem("ma-zone:favorite-events");
+        const parsed = raw ? JSON.parse(raw) : {};
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+
+        return Object.fromEntries(
+            Object.entries(parsed).filter(
+                ([id, event]) =>
+                    typeof id === "string" &&
+                    Boolean(event) &&
+                    typeof event === "object" &&
+                    (event as { id?: unknown }).id === id
+            )
+        ) as Record<string, Event>;
+    } catch {
+        return {};
+    }
+}
+
 export default function Home() {
     const [selectedEvent, setSelectedEvent] = useState<{
         lat: number;
@@ -116,6 +161,7 @@ export default function Home() {
     const [dateTo, setDateTo] = useState("");
     const [freeOnly, setFreeOnly] = useState(false);
     const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+    const [favoriteEventRecords, setFavoriteEventRecords] = useState<Record<string, Event>>({});
     const [latlong, setLatlong] = useState<string | null>(null);
     const [geoError, setGeoError] = useState<string | null>(null);
     const [geoFallbackMessage, setGeoFallbackMessage] = useState<string | null>(null);
@@ -129,13 +175,71 @@ export default function Home() {
             if (raw) {
                 const parsed = JSON.parse(raw);
                 if (Array.isArray(parsed)) {
-                    setFavoriteIds(new Set(parsed.filter((v) => typeof v === "string")));
+                    const ids = new Set(parsed.filter((v) => typeof v === "string"));
+                    setFavoriteIds(ids);
+                    setFavoriteEventRecords({
+                        ...readStoredFavoriteEvents(),
+                        ...readCachedFavoriteEvents(ids),
+                    });
                 }
             }
         } catch {
             setFavoriteIds(new Set());
+            setFavoriteEventRecords({});
         }
     }, []);
+
+    useEffect(() => {
+        const missingFavoriteIds = Array.from(favoriteIds).filter(
+            (id) => !favoriteEventRecords[id]
+        );
+        if (!missingFavoriteIds.length) return;
+
+        let cancelled = false;
+
+        const loadMissingFavorites = async () => {
+            try {
+                const responses = await Promise.all(
+                    missingFavoriteIds.map(async (id) => {
+                        const source = id.startsWith("eb_") ? "eventbrite" : "ticketmaster";
+                        const sourceId = id.replace(/^(tm_|eb_)/, "");
+                        const res = await fetch(
+                            `/api/events/${source}/${encodeURIComponent(sourceId)}`,
+                            { cache: "no-store" }
+                        );
+                        if (!res.ok) return null;
+                        const data = (await res.json()) as { event?: Event };
+                        return data.event || null;
+                    })
+                );
+                const matchingEvents = responses.filter(
+                    (event): event is Event => Boolean(event)
+                );
+                if (!matchingEvents.length || cancelled) return;
+
+                setFavoriteEventRecords((previous) => {
+                    const next = { ...previous };
+                    for (const event of matchingEvents) next[event.id] = event;
+                    try {
+                        window.localStorage.setItem(
+                            "ma-zone:favorite-events",
+                            JSON.stringify(next)
+                        );
+                    } catch {
+                        // ignore storage failures
+                    }
+                    return next;
+                });
+            } catch {
+                // Cached favorites remain available when the recovery request fails.
+            }
+        };
+
+        loadMissingFavorites();
+        return () => {
+            cancelled = true;
+        };
+    }, [favoriteEventRecords, favoriteIds]);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -144,10 +248,16 @@ export default function Home() {
             try {
                 const parsed = e.newValue ? JSON.parse(e.newValue) : [];
                 if (Array.isArray(parsed)) {
-                    setFavoriteIds(new Set(parsed.filter((v) => typeof v === "string")));
+                    const ids = new Set(parsed.filter((v) => typeof v === "string"));
+                    setFavoriteIds(ids);
+                    setFavoriteEventRecords({
+                        ...readStoredFavoriteEvents(),
+                        ...readCachedFavoriteEvents(ids),
+                    });
                 }
             } catch {
                 setFavoriteIds(new Set());
+                setFavoriteEventRecords({});
             }
         };
         window.addEventListener("storage", onStorage);
@@ -291,6 +401,23 @@ export default function Home() {
     }, [events]);
 
     useEffect(() => {
+        if (!events.length || !favoriteIds.size) return;
+
+        setFavoriteEventRecords((previous) => {
+            const next = { ...previous };
+            for (const event of events) {
+                if (favoriteIds.has(event.id)) next[event.id] = event;
+            }
+            try {
+                window.localStorage.setItem("ma-zone:favorite-events", JSON.stringify(next));
+            } catch {
+                // ignore storage failures
+            }
+            return next;
+        });
+    }, [events, favoriteIds]);
+
+    useEffect(() => {
         if (typeof window === "undefined") return;
 
         const onScroll = () => {
@@ -366,27 +493,91 @@ export default function Home() {
 
     const favoriteEvents = useMemo(() => {
         if (!favoriteIds.size) return [];
-        return events.filter((e) => favoriteIds.has(e.id));
-    }, [events, favoriteIds]);
+        return Array.from(favoriteIds)
+            .map((id) => favoriteEventRecords[id] || events.find((event) => event.id === id))
+            .filter((event): event is Event => Boolean(event));
+    }, [events, favoriteEventRecords, favoriteIds]);
 
     const handleToggleFavorite = (event: Event) => {
         setFavoriteIds((prev) => {
             const next = new Set(prev);
             if (next.has(event.id)) {
                 next.delete(event.id);
+                setFavoriteEventRecords((records) => {
+                    const updated = { ...records };
+                    delete updated[event.id];
+                    try {
+                        window.localStorage.setItem("ma-zone:favorite-events", JSON.stringify(updated));
+                    } catch {
+                        // ignore storage failures
+                    }
+                    return updated;
+                });
             } else {
                 next.add(event.id);
+                setFavoriteEventRecords((records) => {
+                    const updated = { ...records, [event.id]: event };
+                    try {
+                        window.localStorage.setItem("ma-zone:favorite-events", JSON.stringify(updated));
+                    } catch {
+                        // ignore storage failures
+                    }
+                    return updated;
+                });
             }
             persistFavorites(next);
             return next;
         });
     };
 
-    const handleSelectEvent = (event: Event) => {
+    const handleSelectEvent = async (event: Event) => {
+        let resolvedEvent = event;
+        const hasCoordinates = event.latitude !== 0 && event.longitude !== 0;
+
+        if (!hasCoordinates) {
+            const query = [event.locationName, event.address, event.city]
+                .filter(Boolean)
+                .join(", ");
+
+            if (query) {
+                try {
+                    const response = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`);
+                    if (response.ok) {
+                        const coordinates = (await response.json()) as {
+                            latitude: number;
+                            longitude: number;
+                        };
+                        resolvedEvent = {
+                            ...event,
+                            latitude: coordinates.latitude,
+                            longitude: coordinates.longitude,
+                        };
+                        setFavoriteEventRecords((previous) => {
+                            if (!previous[event.id]) return previous;
+                            const next = { ...previous, [event.id]: resolvedEvent };
+                            try {
+                                window.localStorage.setItem(
+                                    "ma-zone:favorite-events",
+                                    JSON.stringify(next)
+                                );
+                            } catch {
+                                // ignore storage failures
+                            }
+                            return next;
+                        });
+                    }
+                } catch {
+                    // The address remains available through the directions link.
+                }
+            }
+        }
+
+        if (resolvedEvent.latitude === 0 && resolvedEvent.longitude === 0) return;
+
         setSelectedEvent({
-            id: event.id,
-            lat: event.latitude,
-            lng: event.longitude,
+            id: resolvedEvent.id,
+            lat: resolvedEvent.latitude,
+            lng: resolvedEvent.longitude,
         });
 
         if (typeof window !== "undefined") {
@@ -398,6 +589,24 @@ export default function Home() {
             }, 50);
         }
     };
+
+    const mapEvents = useMemo(() => {
+        const selectedFavorite = favoriteEvents.find(
+            (event) => event.id === selectedEvent?.id
+        );
+        if (!selectedFavorite || filteredEvents.some((event) => event.id === selectedFavorite.id)) {
+            return filteredEvents;
+        }
+        const selectedFavoriteWithCoordinates =
+            selectedEvent && selectedFavorite.id === selectedEvent.id
+                ? {
+                    ...selectedFavorite,
+                    latitude: selectedEvent.lat,
+                    longitude: selectedEvent.lng,
+                }
+                : selectedFavorite;
+        return [...filteredEvents, selectedFavoriteWithCoordinates];
+    }, [favoriteEvents, filteredEvents, selectedEvent]);
 
     const renderFavoriteItem = (event: Event) => (
         <div
@@ -460,22 +669,65 @@ export default function Home() {
             <section className="relative overflow-hidden bg-zinc-950 text-white">
                 <div className="absolute -right-24 -top-28 h-80 w-80 rounded-full bg-orange-500/25 blur-3xl" />
                 <div className="absolute -bottom-40 left-1/4 h-80 w-80 rounded-full bg-rose-500/15 blur-3xl" />
-                <div className="relative mx-auto max-w-7xl px-5 pb-28 pt-14 sm:px-8 sm:pb-32 sm:pt-20">
+                <div className="relative mx-auto grid max-w-7xl gap-12 px-5 pb-20 pt-14 sm:px-8 sm:pb-24 sm:pt-20 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] lg:items-center lg:gap-16 lg:pb-32">
                     <div className="max-w-3xl">
                         <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs font-bold text-zinc-200 backdrop-blur">
                             <span className={`h-2 w-2 rounded-full ${latlong ? "bg-emerald-400" : "animate-pulse bg-orange-400"}`} />
                             {latlong ? "Autour de votre position" : "Localisation en cours…"}
                         </div>
                         <h1 className="mt-6 text-4xl font-black leading-[0.98] tracking-[-0.055em] sm:text-6xl lg:text-7xl">
-                            Votre prochaine sortie
-                            <span className="block text-orange-400">commence ici.</span>
+                            Événements près de moi :
+                            <span className="block text-orange-400">concerts, sorties et activités</span>
                         </h1>
                         <p className="mt-6 max-w-2xl text-base leading-relaxed text-zinc-400 sm:text-lg">
-                            Concerts, festivals, expositions et pépites locales : explorez ce qui se passe autour de vous, puis partez en un clic.
+                            Trouvez facilement quoi faire aujourd&apos;hui, ce soir ou ce week-end
+                            près de chez vous. Découvrez les concerts, festivals, spectacles,
+                            expositions, événements sportifs, activités et sorties autour de
+                            votre position. Consultez les lieux, obtenez votre itinéraire et
+                            réservez vos billets directement depuis Ma Zone.
                         </p>
                     </div>
 
-                    <div className="mt-10 flex flex-wrap gap-8 sm:gap-12">
+                    <div className="relative mx-auto h-72 w-full max-w-xl sm:h-88 lg:mx-0 lg:h-105" aria-label="Ambiance des événements" role="img">
+                        <div className="absolute inset-y-4 left-0 w-[48%] rotate-[-5deg] overflow-hidden rounded-[2rem] border border-white/15 bg-zinc-800 shadow-2xl shadow-black/40">
+                            <Image
+                                src="https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=900&q=85"
+                                alt="Public dans un festival en plein air"
+                                fill
+                                sizes="(max-width: 1024px) 48vw, 24vw"
+                                unoptimized
+                                className="object-cover"
+                            />
+                            <div className="absolute inset-0 bg-linear-to-t from-black/65 via-transparent to-white/5" />
+                            <span className="absolute bottom-4 left-4 text-[10px] font-black uppercase tracking-[0.18em] text-white/80">Festivals</span>
+                        </div>
+                        <div className="absolute right-0 top-0 h-[72%] w-[53%] rotate-[5deg] overflow-hidden rounded-[2rem] border border-white/15 bg-zinc-800 shadow-2xl shadow-black/40">
+                            <Image
+                                src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=900&q=85"
+                                alt="Concert avec une foule éclairée"
+                                fill
+                                sizes="(max-width: 1024px) 53vw, 27vw"
+                                unoptimized
+                                className="object-cover"
+                            />
+                            <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-white/5" />
+                            <span className="absolute bottom-4 left-4 text-[10px] font-black uppercase tracking-[0.18em] text-white/80">Concerts</span>
+                        </div>
+                        <div className="absolute bottom-0 left-[27%] h-[46%] w-[48%] rotate-[-2deg] overflow-hidden rounded-[2rem] border-4 border-zinc-950 bg-zinc-800 shadow-2xl shadow-black/50">
+                            <Image
+                                src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=85"
+                                alt="Scène extérieure illuminée"
+                                fill
+                                sizes="(max-width: 1024px) 48vw, 24vw"
+                                unoptimized
+                                className="object-cover"
+                            />
+                            <div className="absolute inset-0 bg-linear-to-t from-black/65 via-transparent to-white/5" />
+                            <span className="absolute bottom-3 left-4 text-[10px] font-black uppercase tracking-[0.18em] text-white/80">Sorties</span>
+                        </div>
+                    </div>
+
+                    <div className="mt-10 flex flex-wrap gap-8 sm:gap-12 lg:col-span-2">
                         <div>
                             <p className="text-2xl font-black text-white">{loading ? "—" : filteredEvents.length}</p>
                             <p className="mt-1 text-xs font-bold uppercase tracking-widest text-zinc-500">Événements</p>
@@ -594,13 +846,15 @@ export default function Home() {
                 <section id="map-section" className="scroll-mt-24">
                     <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                         <div>
-                            <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Explorer autour de vous</p>
-                            <h2 className="mt-2 text-2xl font-black tracking-tight text-zinc-950 sm:text-3xl">Tout voir sur la carte</h2>
+                            <h2 className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Événements près de moi sur la carte</h2>
+                            <p className="mt-2 text-2xl font-black tracking-tight text-zinc-950 sm:text-3xl">Découvrez les concerts, festivals,
+                                spectacles, expositions et activités
+                                disponibles autour de votre position.</p>
                         </div>
                         <p className="text-sm text-zinc-500">{filteredEvents.length} lieu{filteredEvents.length > 1 ? "x" : ""} affiché{filteredEvents.length > 1 ? "s" : ""}</p>
                     </div>
                     <div className="overflow-hidden rounded-4xl border-6 border-white bg-white shadow-xl shadow-black/8">
-                        <MapClient selectedEvent={selectedEvent} events={filteredEvents} />
+                        <MapClient selectedEvent={selectedEvent} events={mapEvents} />
                     </div>
                 </section>
 

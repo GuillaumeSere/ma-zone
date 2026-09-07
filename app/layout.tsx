@@ -32,224 +32,171 @@ themeColor: "#111827",
 /* =========================
 SEO PRINCIPAL
 ========================= */
-
 export const metadata: Metadata = {
-metadataBase: new URL(SITE_URL),
+  metadataBase: new URL(SITE_URL),
 
-title: {
-default: "Ma Zone | Événements, concerts et sorties près de vous",
-template: "%s | Ma Zone",
-},
-
-description:
-"Trouvez facilement les événements près de chez vous : concerts, festivals, expositions, spectacles, sorties culturelles et activités. Découvrez quoi faire aujourd'hui et ce week-end.",
-
-applicationName: "Ma Zone",
-
-authors: [
-{
-name: "Guillaume SERE",
-url: "https://guillaume-sere.netlify.app/",
-},
-],
-
-creator: "Guillaume SERE",
-publisher: "Ma Zone",
-
-category: "events",
-
-/* =========================
-MOTS-CLÉS
-========================== */
-
-keywords: [
-// Recherche générale
-"événements",
-"événements en France",
-"agenda événements",
-"agenda sorties",
-"agenda culturel",
-"agenda local",
-"agenda événementiel",
-
-// Recherche géolocalisée
-"événements près de moi",
-"événements autour de moi",
-"événements à proximité",
-"sorties près de moi",
-"sorties autour de moi",
-"activités près de moi",
-"que faire près de moi",
-"que faire autour de moi",
-"événements dans ma ville",
-
-// Intentions de recherche
-"que faire aujourd'hui",
-"que faire ce soir",
-"que faire ce week-end",
-"que faire demain",
-"sortir aujourd'hui",
-"sortir ce soir",
-"sorties ce week-end",
-"idées de sorties",
-"idées sorties week-end",
-"activité aujourd'hui",
-"activité ce week-end",
-
-// Événements
-"concerts",
-"concerts près de moi",
-"concerts en France",
-"festivals",
-"festivals en France",
-"expositions",
-"expositions près de moi",
-"spectacles",
-"spectacles près de moi",
-"théâtre",
-"événements sportifs",
-"événements gratuits",
-"événements familiaux",
-"événements culturels",
-"événements musicaux",
-
-// Sorties et loisirs
-"sorties",
-"sorties culturelles",
-"sorties en famille",
-"activités",
-"activités en famille",
-"loisirs",
-"activités de loisirs",
-"idées de sorties en famille",
-"sorties entre amis",
-"que faire en France",
-
-// Découverte locale
-"sortir en France",
-"sorties en France",
-"événements locaux",
-"animations locales",
-"manifestations",
-"agenda culturel local",
-"agenda des sorties",
-"agenda des événements",
-"programme sorties",
-"programme événements"
-],
-
-
-/* =========================
-ROBOTS GOOGLE
-========================== */
-
-robots: {
-index: true,
-follow: true,
-nocache: false,
-
-
-googleBot: {
-  index: true,
-  follow: true,
-  noimageindex: false,
-  "max-video-preview": -1,
-  "max-image-preview": "large",
-  "max-snippet": -1,
-},
-
-},
-
-/* =========================
-OPEN GRAPH
-========================== */
-
-openGraph: {
-type: "website",
-
-locale: "fr_FR",
-
-url: SITE_URL,
-
-siteName: "Ma Zone",
-
-title:
-  "Ma Zone | Trouvez les événements et sorties près de vous",
-
-description:
-  "Concerts, festivals, expositions, spectacles et sorties : découvrez facilement les événements autour de vous et partout en France.",
-
-images: [
-  {
-    url: "/og2-image.png",
-    width: 1200,
-    height: 630,
-    alt: "Ma Zone - Trouvez des événements près de vous",
-    type: "image/png",
+  title: {
+    default:
+      "Événements près de moi : concerts, sorties et activités | Ma Zone",
+    template: "%s | Ma Zone",
   },
-],
 
-},
+  description:
+    "Trouvez les événements près de chez vous : concerts, festivals, spectacles, expositions, activités et sorties à faire aujourd'hui ou ce week-end. Localisez les événements autour de vous, consultez l'itinéraire et réservez vos billets.",
 
-/* =========================
-TWITTER / X
-========================== */
+  applicationName: "Ma Zone",
 
-twitter: {
-card: "summary_large_image",
+  authors: [
+    {
+      name: "Guillaume SERE",
+      url: "https://guillaume-sere.netlify.app/",
+    },
+  ],
 
+  creator: "Guillaume SERE",
+  publisher: "Ma Zone",
 
-title:
-  "Ma Zone | Les événements près de vous",
+  category: "events",
 
-description:
-  "Découvrez les concerts, festivals, expositions, spectacles et sorties près de chez vous.",
+  keywords: [
+    "événements près de moi",
+    "événements autour de moi",
+    "événements à proximité",
+    "événements aujourd'hui",
+    "événements ce soir",
+    "événements ce week-end",
 
-images: ["/og2-image.png"],
+    "concerts près de moi",
+    "concerts autour de moi",
+    "concerts aujourd'hui",
+    "concerts ce soir",
+    "concerts ce week-end",
 
+    "sorties près de moi",
+    "sorties autour de moi",
+    "sorties aujourd'hui",
+    "sorties ce soir",
+    "sorties ce week-end",
 
-},
+    "que faire près de moi",
+    "que faire autour de moi",
+    "que faire aujourd'hui",
+    "que faire ce soir",
+    "que faire ce week-end",
 
-/* =========================
-ICÔNES
-========================== */
+    "activité près de moi",
+    "activités près de moi",
+    "activités autour de moi",
 
-icons: {
-icon: [
-{
-url: "/favicon.ico",
-sizes: "any",
-},
-],
+    "agenda des événements",
+    "agenda des sorties",
+    "agenda culturel",
+    "agenda local",
+    "agenda événementiel",
 
-apple: [
-  {
-    url: "/apple-touch-icon.png",
-    sizes: "180x180",
-    type: "image/png",
+    "festivals",
+    "festivals près de moi",
+    "expositions",
+    "expositions près de moi",
+    "spectacles",
+    "spectacles près de moi",
+    "théâtre",
+    "événements sportifs",
+    "événements gratuits",
+    "événements familiaux",
+    "sorties en famille",
+
+    "réserver des billets",
+    "billets concerts",
+    "billets spectacles",
+    "billetterie événements",
+
+    "itinéraire événement",
+    "lieux événements",
+    "événements en France",
+    "sorties en France",
+  ],
+
+  robots: {
+    index: true,
+    follow: true,
+    nocache: false,
+
+    googleBot: {
+      index: true,
+      follow: true,
+      noimageindex: false,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
-],
-},
 
-/* =========================
-CANONICAL
-========================== */
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: SITE_URL,
+    siteName: "Ma Zone",
 
-alternates: {
-canonical: SITE_URL,
-languages: {
-"fr-FR": SITE_URL,
-},
-},
+    title:
+      "Événements près de moi : concerts, sorties et activités | Ma Zone",
 
-/* =========================
-GOOGLE SEARCH CONSOLE
-========================== */
+    description:
+      "Découvrez les concerts, festivals, spectacles, expositions et sorties autour de vous. Trouvez quoi faire aujourd'hui ou ce week-end, obtenez l'itinéraire et réservez vos billets.",
 
-verification: {
-google:
-"hGMCr1W6D99RGbRgZ1WGKJuTdw_Mmqq7rlSObwX_1Ic",
-},
+    images: [
+      {
+        url: "/og2-image.png",
+        width: 1200,
+        height: 630,
+        alt:
+          "Ma Zone - Événements, concerts et sorties près de chez vous",
+        type: "image/png",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+
+    title:
+      "Événements près de moi : concerts, sorties et activités | Ma Zone",
+
+    description:
+      "Trouvez les événements, concerts, spectacles et sorties autour de vous.",
+
+    images: ["/og2-image.png"],
+  },
+
+  icons: {
+    icon: [
+      {
+        url: "/favicon.ico",
+        sizes: "any",
+      },
+    ],
+
+    apple: [
+      {
+        url: "/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+  },
+
+  alternates: {
+    canonical: SITE_URL,
+
+    languages: {
+      "fr-FR": SITE_URL,
+    },
+  },
+
+  verification: {
+    google:
+      "hGMCr1W6D99RGbRgZ1WGKJuTdw_Mmqq7rlSObwX_1Ic",
+  },
 };
 
 /* =========================
