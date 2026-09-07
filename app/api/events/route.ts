@@ -87,6 +87,54 @@ type EventbriteOrgEventsResponse = {
   };
 };
 
+const KNOWN_VENUE_COORDINATES: Array<{
+  terms: string[];
+  latitude: number;
+  longitude: number;
+}> = [
+  {
+    terms: ["stade de france", "saint denis"],
+    latitude: 48.924459,
+    longitude: 2.360164,
+  },
+  {
+    terms: ["accor arena", "bercy"],
+    latitude: 48.838643,
+    longitude: 2.378626,
+  },
+  {
+    terms: ["paris la defense arena"],
+    latitude: 48.89584,
+    longitude: 2.22929,
+  },
+];
+
+function normalizeVenueText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function resolveVenueCoordinates(
+  locationName: string,
+  address: string,
+  city: string,
+  latitude: number,
+  longitude: number
+): { latitude: number; longitude: number } {
+  const venueText = normalizeVenueText(`${locationName} ${address} ${city}`);
+  const knownVenue = KNOWN_VENUE_COORDINATES.find(({ terms }) =>
+    terms.some((term) => venueText.includes(normalizeVenueText(term)))
+  );
+
+  return knownVenue
+    ? { latitude: knownVenue.latitude, longitude: knownVenue.longitude }
+    : { latitude, longitude };
+}
+
 type TicketmasterClassificationTaxonomyNode = {
   id?: string;
   name?: string;
@@ -276,51 +324,76 @@ export async function GET(request: Request) {
 
   let ticketmasterClassificationNames = new Map<string, string>();
 
-  const mapTicketmaster = (item: TicketmasterEventItem): Event => ({
-    id: `tm_${item.id}`,
-    source: "ticketmaster",
-    sourceId: item.id || "",
-    title: item.name || "",
-    description: item.info || "",
-    image:
-      item.images
-                ?.filter((img): img is TicketmasterImage & { url: string } => typeof img.url === "string" && img.url.length > 0)
-                ?.sort((a, b) => (b.width || 0) - (a.width || 0))?.[0]
-                ?.url || "",
-    date: item.dates?.start?.localDate || "",
-    time: item.dates?.start?.localTime || "",
-    url: item.url || "",
-    locationName: item._embedded?.venues?.[0]?.name || "",
-    address: item._embedded?.venues?.[0]?.address?.line1 || "",
-    city: item._embedded?.venues?.[0]?.city?.name || "",
-    latitude: parseFloat(item._embedded?.venues?.[0]?.location?.latitude || "") || 0,
-        longitude: parseFloat(item._embedded?.venues?.[0]?.location?.longitude || "") || 0,
-        price: null,
-        category: getTicketmasterCategory(item, ticketmasterClassificationNames),
-    });
+  const mapTicketmaster = (item: TicketmasterEventItem): Event => {
+    const venue = item._embedded?.venues?.[0];
+    const locationName = venue?.name || "";
+    const address = venue?.address?.line1 || "";
+    const city = venue?.city?.name || "";
+    const coordinates = resolveVenueCoordinates(
+      locationName,
+      address,
+      city,
+      parseFloat(venue?.location?.latitude || "") || 0,
+      parseFloat(venue?.location?.longitude || "") || 0
+    );
 
-  const mapEventbrite = (item: EventbriteEventItem): Event => ({
-    id: `eb_${item.id}`,
-    source: "eventbrite",
-    sourceId: item.id || "",
-    title: item.name?.text || "",
-    description: item.description?.text || "",
-    image: item.logo?.url || "",
-    date: (item.start?.local || "").split("T")[0] || "",
-    time: (item.start?.local || "").split("T")[1]?.slice(0, 5) || "",
-    url: item.url || "",
-    locationName: item.venue?.name || "",
-    address: item.venue?.address?.address_1 || "",
-    city: item.venue?.address?.city || "",
-        latitude: Number(item.venue?.latitude) || 0,
-        longitude: Number(item.venue?.longitude) || 0,
-        price: item.is_free
-            ? 0
-            : item.ticket_classes?.[0]?.cost?.value
-                ? item.ticket_classes[0].cost.value / 100
-                : null,
-        category: getEventbriteCategory(item),
-    });
+    return {
+      id: `tm_${item.id}`,
+      source: "ticketmaster",
+      sourceId: item.id || "",
+      title: item.name || "",
+      description: item.info || "",
+      image:
+        item.images
+          ?.filter((img): img is TicketmasterImage & { url: string } => typeof img.url === "string" && img.url.length > 0)
+          ?.sort((a, b) => (b.width || 0) - (a.width || 0))?.[0]
+          ?.url || "",
+      date: item.dates?.start?.localDate || "",
+      time: item.dates?.start?.localTime || "",
+      url: item.url || "",
+      locationName,
+      address,
+      city,
+      ...coordinates,
+      price: null,
+      category: getTicketmasterCategory(item, ticketmasterClassificationNames),
+    };
+  };
+
+  const mapEventbrite = (item: EventbriteEventItem): Event => {
+    const locationName = item.venue?.name || "";
+    const address = item.venue?.address?.address_1 || "";
+    const city = item.venue?.address?.city || "";
+    const coordinates = resolveVenueCoordinates(
+      locationName,
+      address,
+      city,
+      Number(item.venue?.latitude) || 0,
+      Number(item.venue?.longitude) || 0
+    );
+
+    return {
+      id: `eb_${item.id}`,
+      source: "eventbrite",
+      sourceId: item.id || "",
+      title: item.name?.text || "",
+      description: item.description?.text || "",
+      image: item.logo?.url || "",
+      date: (item.start?.local || "").split("T")[0] || "",
+      time: (item.start?.local || "").split("T")[1]?.slice(0, 5) || "",
+      url: item.url || "",
+      locationName,
+      address,
+      city,
+      ...coordinates,
+      price: item.is_free
+        ? 0
+        : item.ticket_classes?.[0]?.cost?.value
+          ? item.ticket_classes[0].cost.value / 100
+          : null,
+      category: getEventbriteCategory(item),
+    };
+  };
 
   const [ticketmasterRes, ticketmasterClassificationsRes, eventbriteOrgsRes] = await Promise.all([
     apiKey

@@ -62,6 +62,30 @@ type ArtistInfo = {
   source: "Wikipédia";
 } | null;
 
+function resolveKnownVenueCoordinates(
+  locationName: string,
+  address: string,
+  city: string,
+  latitude: number,
+  longitude: number
+) {
+  const venueText = `${locationName} ${address} ${city}`
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  if (venueText.includes("stade de france")) {
+    return { latitude: 48.924459, longitude: 2.360164 };
+  }
+  if (venueText.includes("accor arena") || venueText.includes("bercy")) {
+    return { latitude: 48.838643, longitude: 2.378626 };
+  }
+  if (venueText.includes("paris la defense arena")) {
+    return { latitude: 48.89584, longitude: 2.22929 };
+  }
+  return { latitude, longitude };
+}
+
 async function findArtistInfo(query: string): Promise<ArtistInfo> {
   const normalizedQuery = query.replace(/\s+/g, " ").trim();
   if (!normalizedQuery) return null;
@@ -186,6 +210,16 @@ function toEvent(source: Source, detail: ReturnType<typeof normalizeTicketmaster
   const category = "category" in detail && typeof detail.category === "string"
     ? detail.category
     : "";
+  const locationName = venue?.name || "";
+  const address = venue?.address?.line1 || venue?.address?.address_1 || "";
+  const city = venue?.city?.name || venue?.address?.city || "";
+  const coordinates = resolveKnownVenueCoordinates(
+    locationName,
+    address,
+    city,
+    Number(venue?.location?.latitude || venue?.latitude) || 0,
+    Number(venue?.location?.longitude || venue?.longitude) || 0
+  );
 
   return {
     id: `${source === "eventbrite" ? "eb" : "tm"}_${detail.sourceId}`,
@@ -197,11 +231,10 @@ function toEvent(source: Source, detail: ReturnType<typeof normalizeTicketmaster
     url: detail.url,
     date: detail.date || "",
     time: detail.time || "",
-    locationName: venue?.name || "",
-    address: venue?.address?.line1 || venue?.address?.address_1 || "",
-    city: venue?.city?.name || venue?.address?.city || "",
-    latitude: Number(venue?.location?.latitude || venue?.latitude) || 0,
-    longitude: Number(venue?.location?.longitude || venue?.longitude) || 0,
+    locationName,
+    address,
+    city,
+    ...coordinates,
     price: isFree === true ? 0 : null,
     category,
   };
