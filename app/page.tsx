@@ -689,7 +689,7 @@ export default function Home() {
                     </div>
 
                     <div className="relative mx-auto h-72 w-full max-w-xl sm:h-88 lg:mx-0 lg:h-105" aria-label="Ambiance des événements" role="img">
-                        <div className="hero-float hero-float-left hero-float-slow absolute inset-y-4 left-0 w-[48%] overflow-hidden rounded-[2rem] border border-white/15 bg-zinc-800 shadow-2xl shadow-black/40">
+                        <div className="hero-float hero-float-left hero-float-slow absolute inset-y-4 left-0 w-[48%] overflow-hidden rounded-4xl border border-white/15 bg-zinc-800 shadow-2xl shadow-black/40">
                             <Image
                                 src="https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=900&q=85"
                                 alt="Public dans un festival en plein air"
@@ -701,7 +701,7 @@ export default function Home() {
                             <div className="absolute inset-0 bg-linear-to-t from-black/65 via-transparent to-white/5" />
                             <span className="absolute bottom-4 left-4 text-[10px] font-black uppercase tracking-[0.18em] text-white/80">Festivals</span>
                         </div>
-                        <div className="hero-float hero-float-right hero-float-fast absolute right-0 top-0 h-[72%] w-[53%] overflow-hidden rounded-[2rem] border border-white/15 bg-zinc-800 shadow-2xl shadow-black/40">
+                        <div className="hero-float hero-float-right hero-float-fast absolute right-0 top-0 h-[72%] w-[53%] overflow-hidden rounded-4xl border border-white/15 bg-zinc-800 shadow-2xl shadow-black/40">
                             <Image
                                 src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=900&q=85"
                                 alt="Concert avec une foule éclairée"
@@ -713,7 +713,7 @@ export default function Home() {
                             <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-white/5" />
                             <span className="absolute bottom-4 left-4 text-[10px] font-black uppercase tracking-[0.18em] text-white/80">Concerts</span>
                         </div>
-                        <div className="hero-float hero-float-center absolute bottom-0 left-[27%] h-[46%] w-[48%] overflow-hidden rounded-[2rem] border-4 border-zinc-950 bg-zinc-800 shadow-2xl shadow-black/50">
+                        <div className="hero-float hero-float-center absolute bottom-0 left-[27%] h-[46%] w-[48%] overflow-hidden rounded-4xl border-4 border-zinc-950 bg-zinc-800 shadow-2xl shadow-black/50">
                             <Image
                                 src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=85"
                                 alt="Scène extérieure illuminée"

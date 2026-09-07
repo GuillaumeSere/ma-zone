@@ -49,17 +49,17 @@ export default function SiteHeader() {
           <span className="relative block h-4 w-5" aria-hidden="true">
             <span
               className={`absolute left-0 top-0 h-0.5 w-5 rounded-full bg-current transition duration-200 ${
-                isMenuOpen ? "translate-y-[7px] rotate-45" : ""
+                isMenuOpen ? "translate-y-1.75 rotate-45" : ""
               }`}
             />
             <span
-              className={`absolute left-0 top-[7px] h-0.5 w-5 rounded-full bg-current transition duration-200 ${
+              className={`absolute left-0 top-1.75 h-0.5 w-5 rounded-full bg-current transition duration-200 ${
                 isMenuOpen ? "scale-x-0 opacity-0" : ""
               }`}
             />
             <span
               className={`absolute bottom-0 left-0 h-0.5 w-5 rounded-full bg-current transition duration-200 ${
-                isMenuOpen ? "-translate-y-[7px] -rotate-45" : ""
+                isMenuOpen ? "-translate-y-1.75 -rotate-45" : ""
               }`}
             />
           </span>

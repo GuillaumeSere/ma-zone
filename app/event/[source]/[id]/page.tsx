@@ -32,6 +32,7 @@ export default function EventDetailPage({
   const [error, setError] = useState<string | null>(null);
   const [artistNames, setArtistNames] = useState<string[]>([]);
   const [artistInfo, setArtistInfo] = useState<ArtistInfo>(null);
+  const [mapCoordinates, setMapCoordinates] = useState<[number, number] | null>(null);
 
   const cacheKey = `ma-zone:event:${source}:${id}`;
 
@@ -103,6 +104,55 @@ export default function EventDetailPage({
   }, [cacheKey, id, source]);
 
   const d = event;
+
+  useEffect(() => {
+    if (!d) {
+      setMapCoordinates(null);
+      return;
+    }
+
+    if (
+      Number.isFinite(d.latitude) &&
+      Number.isFinite(d.longitude) &&
+      d.latitude !== 0 &&
+      d.longitude !== 0
+    ) {
+      setMapCoordinates([d.latitude, d.longitude]);
+      return;
+    }
+
+    const query = [d.locationName, d.address, d.city].filter(Boolean).join(", ");
+    if (!query) {
+      setMapCoordinates(null);
+      return;
+    }
+
+    let cancelled = false;
+    setMapCoordinates(null);
+
+    fetch(`/api/geocode?q=${encodeURIComponent(query)}`)
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as { latitude?: number; longitude?: number };
+      })
+      .then((coordinates) => {
+        if (
+          !cancelled &&
+          coordinates &&
+          Number.isFinite(coordinates.latitude) &&
+          Number.isFinite(coordinates.longitude)
+        ) {
+          setMapCoordinates([coordinates.latitude!, coordinates.longitude!]);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setMapCoordinates(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [d]);
 
   if (loading) {
     return (
@@ -277,11 +327,11 @@ export default function EventDetailPage({
           <p className="mt-2 text-sm text-sky-800/70">
             Retrouvez l&apos;evenement sur la carte.
           </p>
-          {d.latitude && d.longitude ? (
+          {mapCoordinates ? (
             <div className="mt-4">
               <MapClient
-                selectedEvent={{ id: d.id, lat: d.latitude, lng: d.longitude }}
-                events={[d]}
+                selectedEvent={{ id: d.id, lat: mapCoordinates[0], lng: mapCoordinates[1] }}
+                events={[{ ...d, latitude: mapCoordinates[0], longitude: mapCoordinates[1] }]}
               />
             </div>
           ) : (
