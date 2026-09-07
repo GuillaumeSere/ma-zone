@@ -214,6 +214,54 @@ function getEventbriteCategory(item: EventbriteEventItem): string {
   return candidates.find((value: unknown): value is string => typeof value === "string" && value.trim().length > 0) || "";
 }
 
+function normalizeDuplicatePart(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "")
+    .trim();
+}
+
+function getEventDuplicateKey(event: Event): string {
+  const title = normalizeDuplicatePart(event.title);
+  const date = normalizeDuplicatePart(event.date);
+  const time = normalizeDuplicatePart(event.time).slice(0, 5);
+  const place = normalizeDuplicatePart(
+    event.city || event.locationName || event.address
+  );
+
+  return [title, date, time, place].join("|");
+}
+
+function eventCompleteness(event: Event): number {
+  return [
+    event.description,
+    event.image,
+    event.url,
+    event.locationName,
+    event.address,
+    event.city,
+    event.latitude !== 0 && event.longitude !== 0,
+  ].filter(Boolean).length;
+}
+
+function deduplicateEvents(events: Event[]): Event[] {
+  const unique = new Map<string, Event>();
+
+  for (const event of events) {
+    const key = getEventDuplicateKey(event);
+    if (!key.replace(/\|/g, "")) continue;
+
+    const current = unique.get(key);
+    if (!current || eventCompleteness(event) > eventCompleteness(current)) {
+      unique.set(key, event);
+    }
+  }
+
+  return Array.from(unique.values());
+}
+
 export async function GET(request: Request) {
     const apiKey = process.env.NEXT_PUBLIC_TICKETMASTER_API_KEY;
     const eventbriteToken = process.env.EVENTBRITE_API_TOKEN;
@@ -381,7 +429,7 @@ export async function GET(request: Request) {
         );
     }
 
-  const events = [...ticketmasterEvents, ...eventbriteEvents];
+  const events = deduplicateEvents([...ticketmasterEvents, ...eventbriteEvents]);
 
   return NextResponse.json({
     events,
