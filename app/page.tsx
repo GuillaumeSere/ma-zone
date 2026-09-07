@@ -689,7 +689,7 @@ export default function Home() {
                     </div>
 
                     <div className="relative mx-auto h-72 w-full max-w-xl sm:h-88 lg:mx-0 lg:h-105" aria-label="Ambiance des événements" role="img">
-                        <div className="absolute inset-y-4 left-0 w-[48%] rotate-[-5deg] overflow-hidden rounded-[2rem] border border-white/15 bg-zinc-800 shadow-2xl shadow-black/40">
+                        <div className="hero-float hero-float-left hero-float-slow absolute inset-y-4 left-0 w-[48%] overflow-hidden rounded-[2rem] border border-white/15 bg-zinc-800 shadow-2xl shadow-black/40">
                             <Image
                                 src="https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=900&q=85"
                                 alt="Public dans un festival en plein air"
@@ -701,7 +701,7 @@ export default function Home() {
                             <div className="absolute inset-0 bg-linear-to-t from-black/65 via-transparent to-white/5" />
                             <span className="absolute bottom-4 left-4 text-[10px] font-black uppercase tracking-[0.18em] text-white/80">Festivals</span>
                         </div>
-                        <div className="absolute right-0 top-0 h-[72%] w-[53%] rotate-[5deg] overflow-hidden rounded-[2rem] border border-white/15 bg-zinc-800 shadow-2xl shadow-black/40">
+                        <div className="hero-float hero-float-right hero-float-fast absolute right-0 top-0 h-[72%] w-[53%] overflow-hidden rounded-[2rem] border border-white/15 bg-zinc-800 shadow-2xl shadow-black/40">
                             <Image
                                 src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=900&q=85"
                                 alt="Concert avec une foule éclairée"
@@ -713,7 +713,7 @@ export default function Home() {
                             <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-white/5" />
                             <span className="absolute bottom-4 left-4 text-[10px] font-black uppercase tracking-[0.18em] text-white/80">Concerts</span>
                         </div>
-                        <div className="absolute bottom-0 left-[27%] h-[46%] w-[48%] rotate-[-2deg] overflow-hidden rounded-[2rem] border-4 border-zinc-950 bg-zinc-800 shadow-2xl shadow-black/50">
+                        <div className="hero-float hero-float-center absolute bottom-0 left-[27%] h-[46%] w-[48%] overflow-hidden rounded-[2rem] border-4 border-zinc-950 bg-zinc-800 shadow-2xl shadow-black/50">
                             <Image
                                 src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=900&q=85"
                                 alt="Scène extérieure illuminée"
@@ -745,7 +745,7 @@ export default function Home() {
             </section>
 
             <div className="relative mx-auto -mt-16 max-w-7xl space-y-12 px-5 pb-8 sm:px-8">
-                <section aria-label="Recherche et filtres" className="rounded-4xl border border-black/5 bg-white p-4 shadow-2xl shadow-black/10 sm:p-6">
+                <section aria-label="Recherche et filtres" className="rounded-4xl border border-orange-100 bg-white/92 p-4 shadow-2xl shadow-orange-950/10 sm:p-6">
                     <div className="flex flex-col gap-3 lg:flex-row">
                         <div className="relative flex-1">
                             <svg viewBox="0 0 24 24" aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -846,14 +846,14 @@ export default function Home() {
                 <section id="map-section" className="scroll-mt-24">
                     <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                         <div>
-                            <h2 className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Événements près de moi sur la carte</h2>
+                            <h2 className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-orange-600"><span className="h-2 w-2 rounded-full bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.7)]" />Événements près de moi sur la carte</h2>
                             <p className="mt-2 text-2xl font-black tracking-tight text-zinc-950 sm:text-3xl">Découvrez les concerts, festivals,
                                 spectacles, expositions et activités
                                 disponibles autour de votre position.</p>
                         </div>
                         <p className="text-sm text-zinc-500">{filteredEvents.length} lieu{filteredEvents.length > 1 ? "x" : ""} affiché{filteredEvents.length > 1 ? "s" : ""}</p>
                     </div>
-                    <div className="overflow-hidden rounded-4xl border-6 border-white bg-white shadow-xl shadow-black/8">
+                    <div className="overflow-hidden rounded-4xl border-6 border-white bg-white shadow-xl shadow-orange-950/10 ring-1 ring-orange-100">
                         <MapClient selectedEvent={selectedEvent} events={mapEvents} />
                     </div>
                 </section>
@@ -861,11 +861,11 @@ export default function Home() {
                 <section id="events" className="scroll-mt-24">
                     <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
                         <div>
-                            <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">La sélection <span className="text-black">Ma</span>Zone</p>
+                            <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">La sélection <span className="text-zinc-950">Ma</span>Zone</p>
                             <h2 className="mt-2 text-2xl font-black tracking-tight text-zinc-950 sm:text-3xl">Événements à découvrir</h2>
                         </div>
                         {!loading ? (
-                            <span className="w-fit rounded-full bg-zinc-200/70 px-3 py-1.5 text-xs font-bold text-zinc-600">
+                            <span className="w-fit rounded-full bg-orange-100 px-3 py-1.5 text-xs font-bold text-orange-700">
                                 {filteredEvents.length} résultat{filteredEvents.length > 1 ? "s" : ""}
                             </span>
                         ) : null}

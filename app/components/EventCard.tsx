@@ -44,7 +44,7 @@ export default function EventCard({
     <article
       className={[
         "group flex h-full w-full flex-col overflow-hidden rounded-3xl border bg-white text-left transition duration-300",
-        "hover:-translate-y-1 hover:shadow-xl hover:shadow-black/8",
+        "hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-orange-950/10",
         isActive
           ? "border-orange-400 shadow-xl shadow-orange-500/10 ring-4 ring-orange-100"
           : "border-black/5 shadow-sm",
@@ -74,7 +74,7 @@ export default function EventCard({
               </svg>
             </div>
           )}
-          <span className="absolute inset-0 bg-linear-to-t from-black/35 via-transparent to-transparent opacity-60 transition group-hover:opacity-80" />
+          <span className="absolute inset-0 bg-linear-to-t from-zinc-950/65 via-transparent to-orange-950/10 opacity-70 transition duration-300 group-hover:opacity-100" />
         </button>
 
         {event.category ? (
@@ -140,7 +140,7 @@ export default function EventCard({
           <button
             type="button"
             onClick={() => onSelect?.(event)}
-            className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-bold text-zinc-500 transition hover:text-orange-600"
+            className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-bold text-orange-600 transition hover:text-orange-700"
           >
             Voir sur la carte
             <span aria-hidden="true">↗</span>

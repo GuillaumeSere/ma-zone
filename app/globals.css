@@ -44,3 +44,47 @@ select {
   outline: 3px solid rgba(249, 115, 22, 0.45);
   outline-offset: 3px;
 }
+
+@keyframes hero-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(var(--hero-rotate));
+  }
+  50% {
+    transform: translate3d(0, -8px, 0) rotate(var(--hero-rotate));
+  }
+}
+
+.hero-float {
+  --hero-rotate: 0deg;
+  animation: hero-float 7s ease-in-out infinite;
+  will-change: transform;
+}
+
+.hero-float-slow {
+  animation-duration: 8.5s;
+  animation-delay: -2s;
+}
+
+.hero-float-fast {
+  animation-duration: 6.5s;
+  animation-delay: -3.5s;
+}
+
+.hero-float-left {
+  --hero-rotate: -5deg;
+}
+
+.hero-float-right {
+  --hero-rotate: 5deg;
+}
+
+.hero-float-center {
+  --hero-rotate: -2deg;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-float {
+    animation: none;
+  }
+}

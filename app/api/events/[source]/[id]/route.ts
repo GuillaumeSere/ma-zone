@@ -33,6 +33,7 @@ type TicketmasterDetail = {
   seatmap?: unknown;
   accessibility?: unknown;
   _embedded?: {
+    attractions?: Array<{ name?: string }>;
     venues?: unknown[];
   };
 };
@@ -52,6 +53,72 @@ type EventbriteDetail = {
   venue?: unknown;
   ticket_availability?: unknown;
 };
+
+type ArtistInfo = {
+  name: string;
+  extract: string;
+  url: string;
+  image?: string;
+  source: "Wikipédia";
+} | null;
+
+async function findArtistInfo(query: string): Promise<ArtistInfo> {
+  const normalizedQuery = query.replace(/\s+/g, " ").trim();
+  if (!normalizedQuery) return null;
+
+  try {
+    const searchResponse = await fetch(
+      `https://fr.wikipedia.org/w/api.php?${new URLSearchParams({
+        action: "query",
+        list: "search",
+        srsearch: normalizedQuery,
+        srlimit: "1",
+        format: "json",
+        origin: "*",
+      }).toString()}`,
+      {
+        cache: "no-store",
+        headers: { "User-Agent": "ma-zone-events/1.0 (event discovery)" },
+      }
+    );
+    if (!searchResponse.ok) return null;
+
+    const searchData = (await searchResponse.json()) as {
+      query?: { search?: Array<{ title?: string }> };
+    };
+    const title = searchData.query?.search?.[0]?.title;
+    if (!title) return null;
+
+    const summaryResponse = await fetch(
+      `https://fr.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title.replace(/ /g, "_"))}`,
+      {
+        cache: "no-store",
+        headers: { "User-Agent": "ma-zone-events/1.0 (event discovery)" },
+      }
+    );
+    if (!summaryResponse.ok) return null;
+
+    const summary = (await summaryResponse.json()) as {
+      title?: string;
+      extract?: string;
+      thumbnail?: { source?: string };
+      content_urls?: { desktop?: { page?: string } };
+    };
+    if (!summary.extract) return null;
+
+    return {
+      name: summary.title || title,
+      extract: summary.extract,
+      url:
+        summary.content_urls?.desktop?.page ||
+        `https://fr.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`,
+      image: summary.thumbnail?.source,
+      source: "Wikipédia",
+    };
+  } catch {
+    return null;
+  }
+}
 
 function normalizeTicketmaster(item: TicketmasterDetail) {
   const images = Array.isArray(item.images)
@@ -79,6 +146,9 @@ function normalizeTicketmaster(item: TicketmasterDetail) {
     promoter: item.promoter || null,
     seatmap: item.seatmap || null,
     accessibility: item.accessibility || null,
+    artistNames: (item._embedded?.attractions || [])
+      .map((attraction) => attraction.name || "")
+      .filter(Boolean),
   };
 }
 
@@ -179,10 +249,14 @@ export async function GET(
 
     const data = (await res.json()) as TicketmasterDetail;
     const detail = normalizeTicketmaster(data);
+    const artistQuery = detail.artistNames[0] || detail.title;
+    const artistInfo = await findArtistInfo(artistQuery);
     return NextResponse.json({
       source,
       detail,
       event: toEvent(source, detail),
+      artistNames: detail.artistNames,
+      artistInfo,
       raw: data,
     });
   }
@@ -215,10 +289,17 @@ export async function GET(
 
   const data = (await res.json()) as EventbriteDetail;
   const detail = normalizeEventbrite(data);
+  const organizerName =
+    detail.organizer && typeof detail.organizer === "object" && "name" in detail.organizer
+      ? String((detail.organizer as { name?: unknown }).name || "")
+      : "";
+  const artistInfo = await findArtistInfo(organizerName || detail.title);
   return NextResponse.json({
     source,
     detail,
     event: toEvent(source, detail),
+    artistNames: organizerName ? [organizerName] : [],
+    artistInfo,
     raw: data,
   });
 }

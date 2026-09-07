@@ -7,10 +7,10 @@ export default function SiteHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-black/5 bg-[#f7f6f2]/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-white/70 bg-[#f7f6f2]/88 backdrop-blur-xl">
       <div className="mx-auto flex h-18 max-w-7xl items-center justify-between gap-5 px-5 sm:px-8">
         <Link href="/" className="group flex items-center gap-3" aria-label="Retour à l'accueil MaZone">
-          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-zinc-950 text-white shadow-lg shadow-black/15 transition group-hover:-rotate-3 group-hover:scale-105">
+          <span className="grid h-10 w-10 place-items-center rounded-2xl bg-linear-to-br from-orange-400 via-orange-500 to-rose-600 text-white shadow-lg shadow-orange-500/25 transition group-hover:-rotate-3 group-hover:scale-105">
             <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
               <circle cx="12" cy="10" r="2.5" fill="#fb923c" stroke="none" />
@@ -26,15 +26,15 @@ export default function SiteHeader() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-1 rounded-full border border-black/5 bg-white/80 p-1 shadow-sm sm:flex" aria-label="Navigation principale">
+        <nav className="hidden items-center gap-1 rounded-full border border-white bg-white/75 p-1 shadow-[0_8px_30px_rgba(24,24,27,0.06)] sm:flex" aria-label="Navigation principale">
           <Link href="/#events" className="rounded-full px-4 py-2 text-sm font-semibold text-zinc-600 transition hover:bg-zinc-950 hover:text-white">
             Explorer
           </Link>
           <Link href="/#map-section" className="rounded-full px-4 py-2 text-sm font-semibold text-zinc-600 transition hover:bg-zinc-950 hover:text-white">
             Carte
           </Link>
-          <Link href="/#favorites" className="rounded-full px-4 py-2 text-sm font-semibold text-zinc-600 transition hover:bg-zinc-950 hover:text-white">
-            Favoris
+          <Link href="/#favorites" className="rounded-full px-4 py-2 text-sm font-semibold text-zinc-600 transition hover:bg-orange-500 hover:text-white">
+            Favoris <span className="ml-1 text-orange-500 transition group-hover:text-white">★</span>
           </Link>
         </nav>
 
