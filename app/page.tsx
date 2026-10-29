@@ -564,7 +564,7 @@ export default function Home() {
                                 // ignore storage failures
                             }
                             return next;
-                        });
+                        })
                     }
                 } catch {
                     // The address remains available through the directions link.
